@@ -1,6 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { hasEnvVars } from "../utils";
+
+// This check can be removed, it is just for tutorial purposes
+const hasEnvVars =
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY;
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
