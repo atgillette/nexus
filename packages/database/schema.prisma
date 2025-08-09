@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  firstName   String
+  lastName    String
+  role        UserRole
+  companyId   String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  company       Company?      @relation(fields: [companyId], references: [id])
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  domain    String   @unique
+  industry  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users       User[]
+  workflows   Workflow[]
+  credentials Credential[]
+  billingUsage BillingUsage[]
+
+  @@map("companies")
+}
+
+model Workflow {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  companyId   String
+  isActive    Boolean  @default(true)
+  config      Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  company    Company              @relation(fields: [companyId], references: [id])
+  executions WorkflowExecution[]
+
+  @@map("workflows")
+}
+
+model WorkflowExecution {
+  id           String            @id @default(cuid())
+  workflowId   String
+  status       ExecutionStatus   @default(pending)
+  startedAt    DateTime          @default(now())
+  completedAt  DateTime?
+  duration     Int?              // in milliseconds
+  result       Json?
+  error        String?
+  
+  // Metrics for ROI calculation
+  itemsProcessed Int @default(0)
+  timeSaved      Int @default(0) // in minutes
+  costSavings    Float @default(0) // in dollars
+
+  // Relations
+  workflow Workflow @relation(fields: [workflowId], references: [id])
+
+  @@map("workflow_executions")
+}
+
+model Credential {
+  id        String   @id @default(cuid())
+  name      String
+  type      String
+  companyId String
+  isActive  Boolean  @default(true)
+  // Encrypted credential data stored separately for security
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@map("credentials")
+}
+
+model BillingUsage {
+  id             String   @id @default(cuid())
+  companyId      String
+  month          Int      // 1-12
+  year           Int
+  executionCount Int      @default(0)
+  totalTimeSaved Int      @default(0) // in minutes
+  totalCostSaved Float    @default(0) // in dollars
+  billingAmount  Float    @default(0)
+  isPaid         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, month, year])
+  @@map("billing_usage")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType @default(info)
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+// Enums
+enum UserRole {
+  admin
+  se    // Sales Engineer
+  client
+}
+
+enum ExecutionStatus {
+  pending
+  running
+  completed
+  failed
+}
+
+enum NotificationType {
+  info
+  success
+  warning
+  error
+}

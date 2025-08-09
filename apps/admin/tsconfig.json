@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"],
+      "@nexus/ui": ["../../packages/ui"],
+      "@nexus/database": ["../../packages/database"],
+      "@nexus/auth": ["../../packages/auth"],
+      "@nexus/types": ["../../packages/types"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
