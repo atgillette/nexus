@@ -3,10 +3,10 @@
   "outputDirectory": ".next",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "turbo": false,
   "build": {
     "env": {
-      "TURBO_TELEMETRY_DISABLED": "1"
+      "TURBO_TELEMETRY_DISABLED": "1",
+      "SKIP_ENV_VALIDATION": "1"
     }
   },
   "functions": {
