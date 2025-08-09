@@ -3,6 +3,12 @@
   "outputDirectory": ".next",
   "installCommand": "npm install",
   "framework": "nextjs",
+  "turbo": false,
+  "build": {
+    "env": {
+      "TURBO_TELEMETRY_DISABLED": "1"
+    }
+  },
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30
