@@ -15,7 +15,9 @@
     "test": "turbo run test",
     "db:generate": "turbo run db:generate",
     "db:push": "turbo run db:push",
-    "db:migrate": "turbo run db:migrate"
+    "db:migrate": "turbo run db:migrate",
+    "build:admin": "cd apps/admin && npm run build",
+    "build:client": "cd apps/client && npm run build"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.1",

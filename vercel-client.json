@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npx turbo build --filter=@nexus/client",
+  "outputDirectory": "apps/client/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "functions": {
+    "apps/client/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  }
+}
