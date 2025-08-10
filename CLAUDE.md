@@ -95,7 +95,11 @@ Required environment variables:
 ## Development Guidelines
 
 ### Code Standards
-- NO `any` types - use proper TypeScript types
+- **NO `any` types** - Use proper TypeScript types, type guards, and `unknown` for error handling
+  - Enforced by ESLint rule `@typescript-eslint/no-explicit-any` (error level)
+  - Use type guards instead of type assertions: `(value as Type)` → `isType(value)`
+  - Prefer `unknown` over `any` for uncertain types, then narrow with type guards
+  - Build fails if `any` types are detected
 - Match Figma designs exactly
 - Commit frequently with descriptive messages
 - Update PROJECT_STATUS.md after major tasks
