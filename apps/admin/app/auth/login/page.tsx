@@ -43,21 +43,39 @@ export default function AdminLoginPage() {
         keyStart: supabaseAnonKey?.substring(0, 20)
       });
       
-      // Test if the URL is accessible
+      // Test if the URL is accessible with detailed parameter checking
       console.log('Testing URL accessibility...');
       try {
         const testUrl = `${supabaseUrl}/rest/v1/`;
         console.log('Test URL:', testUrl);
-        const testResponse = await fetch(testUrl, {
+        console.log('Test URL type:', typeof testUrl);
+        console.log('Test URL length:', testUrl.length);
+        
+        const headers = {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`
+        };
+        console.log('Headers object:', headers);
+        console.log('Headers stringified:', JSON.stringify(headers));
+        
+        const fetchOptions = {
           method: 'GET',
-          headers: {
-            'apikey': supabaseAnonKey,
-            'Authorization': `Bearer ${supabaseAnonKey}`
-          }
-        });
-        console.log('URL test response:', testResponse.status, testResponse.statusText);
+          headers: headers
+        };
+        console.log('Fetch options:', fetchOptions);
+        
+        // Test with minimal fetch first
+        console.log('Trying minimal fetch...');
+        const minimalResponse = await fetch(testUrl);
+        console.log('Minimal fetch succeeded:', minimalResponse.status);
+        
       } catch (urlError) {
         console.error('URL test failed:', urlError);
+        console.log('Error details:', {
+          name: urlError.name,
+          message: urlError.message,
+          stack: urlError.stack
+        });
       }
       
       let supabase;
