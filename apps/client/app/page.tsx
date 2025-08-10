@@ -81,32 +81,6 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-}
-
-function formatTimeAgo(timestamp: string): string {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins} minutes ago`;
-  if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
-  return `${Math.floor(diffMins / 1440)} days ago`;
-}
-
-function getStatusColor(status: string): string {
-  switch (status) {
-    case 'active': return 'bg-green-100 text-green-800';
-    case 'paused': return 'bg-gray-100 text-gray-800';
-    case 'scheduled': return 'bg-yellow-100 text-yellow-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
-}
 
 export default async function ClientDashboard() {
   const data = await getClientDashboardData();
