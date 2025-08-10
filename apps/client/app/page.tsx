@@ -1,6 +1,109 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@nexus/ui";
 
-export default function ClientDashboard() {
+interface ClientDashboardData {
+  company: {
+    name: string;
+    id: string;
+  };
+  metrics: {
+    activeWorkflows: number;
+    totalExecutions: number;
+    successRate: number;
+    estimatedSavings: number;
+    averageExecutionTime: number;
+  };
+  billing: {
+    monthlyUsage: number;
+    monthlyLimit: number;
+    costPerExecution: number;
+    currentCost: number;
+  };
+  recentExecutions: Array<{
+    workflowName: string;
+    success: boolean;
+    timestamp: string;
+    executionTime: number;
+  }>;
+  workflows: Array<{
+    id: string;
+    name: string;
+    status: string;
+    executionCount: number;
+    lastExecution: string | null;
+  }>;
+}
+
+async function getClientDashboardData(): Promise<ClientDashboardData> {
+  try {
+    const response = await fetch('http://localhost:3002/api/dashboard', {
+      cache: 'no-store' // Always fetch fresh data
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch dashboard data');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching client dashboard data:', error);
+    // Return fallback data if API fails
+    return {
+      company: { name: "Demo Company", id: "demo" },
+      metrics: {
+        activeWorkflows: 0,
+        totalExecutions: 0,
+        successRate: 0,
+        estimatedSavings: 0,
+        averageExecutionTime: 0
+      },
+      billing: {
+        monthlyUsage: 0,
+        monthlyLimit: 1000,
+        costPerExecution: 2.50,
+        currentCost: 0
+      },
+      recentExecutions: [],
+      workflows: []
+    };
+  }
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
+}
+
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+}
+
+function formatTimeAgo(timestamp: string): string {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins} minutes ago`;
+  if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
+  return `${Math.floor(diffMins / 1440)} days ago`;
+}
+
+function getStatusColor(status: string): string {
+  switch (status) {
+    case 'active': return 'bg-green-100 text-green-800';
+    case 'paused': return 'bg-gray-100 text-gray-800';
+    case 'scheduled': return 'bg-yellow-100 text-yellow-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+}
+
+export default async function ClientDashboard() {
+  const data = await getClientDashboardData();
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -10,7 +113,7 @@ export default function ClientDashboard() {
             Nexus Dashboard
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Welcome back, Acme Corporation
+            Welcome back, {data.company.name}
           </p>
         </div>
       </header>
@@ -21,11 +124,11 @@ export default function ClientDashboard() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Time Saved</CardTitle>
+              <CardTitle className="text-sm font-medium">Active Workflows</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2,456 hrs</div>
-              <p className="text-xs text-muted-foreground">This month</p>
+              <div className="text-2xl font-bold">{data.metrics.activeWorkflows}</div>
+              <p className="text-xs text-muted-foreground">Currently running</p>
             </CardContent>
           </Card>
 
@@ -34,28 +137,28 @@ export default function ClientDashboard() {
               <CardTitle className="text-sm font-medium">Cost Savings</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$48,293</div>
-              <p className="text-xs text-muted-foreground">+23% from last month</p>
+              <div className="text-2xl font-bold">{formatCurrency(data.metrics.estimatedSavings)}</div>
+              <p className="text-xs text-muted-foreground">From successful executions</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Automation Rate</CardTitle>
+              <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">87%</div>
-              <p className="text-xs text-muted-foreground">Of eligible processes</p>
+              <div className="text-2xl font-bold">{data.metrics.successRate}%</div>
+              <p className="text-xs text-muted-foreground">Of total executions</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">ROI</CardTitle>
+              <CardTitle className="text-sm font-medium">Monthly Cost</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">342%</div>
-              <p className="text-xs text-muted-foreground">Annual return</p>
+              <div className="text-2xl font-bold">{formatCurrency(data.billing.currentCost)}</div>
+              <p className="text-xs text-muted-foreground">{data.billing.monthlyUsage} / {data.billing.monthlyLimit} executions</p>
             </CardContent>
           </Card>
         </div>

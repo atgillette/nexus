@@ -1,6 +1,79 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@nexus/ui";
 
-export default function AdminDashboard() {
+interface DashboardData {
+  metrics: {
+    totalUsers: number;
+    activeWorkflows: number;
+    totalExecutions: number;
+    successRate: number;
+    monthlyRevenue: number;
+  };
+  recentActivity: Array<{
+    type: string;
+    user: string;
+    email: string;
+    company: string;
+    timestamp: string;
+  }>;
+  recentExecutions: Array<{
+    type: string;
+    workflow: string;
+    company: string;
+    timestamp: string;
+    success: boolean;
+  }>;
+}
+
+async function getDashboardData(): Promise<DashboardData> {
+  try {
+    const response = await fetch('http://localhost:3001/api/dashboard', {
+      cache: 'no-store' // Always fetch fresh data
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch dashboard data');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    // Return fallback data if API fails
+    return {
+      metrics: {
+        totalUsers: 0,
+        activeWorkflows: 0,
+        totalExecutions: 0,
+        successRate: 0,
+        monthlyRevenue: 0,
+      },
+      recentActivity: [],
+      recentExecutions: [],
+    };
+  }
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
+}
+
+function formatTimeAgo(timestamp: string): string {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins} minutes ago`;
+  if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
+  return `${Math.floor(diffMins / 1440)} days ago`;
+}
+
+export default async function AdminDashboard() {
+  const data = await getDashboardData();
+  
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -21,8 +94,8 @@ export default function AdminDashboard() {
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">254</div>
-              <p className="text-xs text-muted-foreground">+12% from last month</p>
+              <div className="text-2xl font-bold">{data.metrics.totalUsers.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Live from database</p>
             </CardContent>
           </Card>
 
@@ -31,8 +104,8 @@ export default function AdminDashboard() {
               <CardTitle className="text-sm font-medium">Active Workflows</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">48</div>
-              <p className="text-xs text-muted-foreground">+3 new this week</p>
+              <div className="text-2xl font-bold">{data.metrics.activeWorkflows}</div>
+              <p className="text-xs text-muted-foreground">Currently running</p>
             </CardContent>
           </Card>
 
@@ -41,8 +114,8 @@ export default function AdminDashboard() {
               <CardTitle className="text-sm font-medium">Total Executions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12,543</div>
-              <p className="text-xs text-muted-foreground">92% success rate</p>
+              <div className="text-2xl font-bold">{data.metrics.totalExecutions.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">{data.metrics.successRate}% success rate</p>
             </CardContent>
           </Card>
 
@@ -51,8 +124,8 @@ export default function AdminDashboard() {
               <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$45,231</div>
-              <p className="text-xs text-muted-foreground">+19% from last month</p>
+              <div className="text-2xl font-bold">{formatCurrency(data.metrics.monthlyRevenue)}</div>
+              <p className="text-xs text-muted-foreground">Calculated from executions</p>
             </CardContent>
           </Card>
         </div>
@@ -62,28 +135,24 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Recent User Activity</CardTitle>
-              <CardDescription>Latest user registrations and actions</CardDescription>
+              <CardDescription>Latest user registrations from database</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center">
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium">New user registered</p>
-                    <p className="text-sm text-muted-foreground">john.doe@acme.com - 2 minutes ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium">Workflow created</p>
-                    <p className="text-sm text-muted-foreground">Data Processing Pipeline - 15 minutes ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium">Payment received</p>
-                    <p className="text-sm text-muted-foreground">TechFlow Solutions - $299 - 1 hour ago</p>
-                  </div>
-                </div>
+                {data.recentActivity.length > 0 ? (
+                  data.recentActivity.map((activity, index) => (
+                    <div key={index} className="flex items-center">
+                      <div className="ml-4 space-y-1">
+                        <p className="text-sm font-medium">New user registered</p>
+                        <p className="text-sm text-muted-foreground">
+                          {activity.email} from {activity.company} - {formatTimeAgo(activity.timestamp)}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No recent activity</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -101,15 +170,15 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Database</span>
-                  <span className="text-sm text-green-600">Healthy</span>
+                  <span className="text-sm text-green-600">Connected ✓</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Queue Processing</span>
-                  <span className="text-sm text-yellow-600">High Load</span>
+                  <span className="text-sm font-medium">Total Records</span>
+                  <span className="text-sm">{data.metrics.totalUsers + data.metrics.totalExecutions}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Average Response Time</span>
-                  <span className="text-sm">245ms</span>
+                  <span className="text-sm font-medium">Success Rate</span>
+                  <span className="text-sm text-green-600">{data.metrics.successRate}%</span>
                 </div>
               </div>
             </CardContent>
