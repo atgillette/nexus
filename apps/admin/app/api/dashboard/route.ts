@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ExecutionStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -49,7 +49,7 @@ export async function GET() {
 
     // Calculate success rate (completed = success)
     const totalExecutions = allExecutions.length;
-    const successfulExecutions = allExecutions.filter((e: { status: string }) => e.status === 'completed').length;
+    const successfulExecutions = allExecutions.filter((e: { status: ExecutionStatus }) => e.status === ExecutionStatus.completed).length;
     const successRate = totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0;
     
     // Calculate revenue (mock calculation based on executions)

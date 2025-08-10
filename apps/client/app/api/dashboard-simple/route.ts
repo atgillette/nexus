@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ExecutionStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -32,7 +32,7 @@ export async function GET() {
     
     // Calculate metrics (success = completed status)
     const totalExecutions = executions.length;
-    const successfulExecutions = executions.filter((e: any) => e.status === 'completed').length;
+    const successfulExecutions = executions.filter((e: { status: ExecutionStatus }) => e.status === ExecutionStatus.completed).length;
     const successRate = totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0;
     const estimatedSavings = successfulExecutions * 50; // $50 per successful execution
     
@@ -42,7 +42,7 @@ export async function GET() {
         id: company.id
       },
       metrics: {
-        activeWorkflows: workflows.filter(w => w.status === 'active').length,
+        activeWorkflows: workflows.filter(w => w.isActive).length,
         totalExecutions,
         successRate,
         estimatedSavings,
@@ -56,16 +56,16 @@ export async function GET() {
       },
       recentExecutions: executions.slice(0, 10).map(execution => ({
         workflowName: workflows.find(w => w.id === execution.workflowId)?.name || 'Unknown',
-        success: execution.status === 'completed',
+        success: execution.status === ExecutionStatus.completed,
         timestamp: execution.startedAt.toISOString(),
         executionTime: execution.duration || 0
       })),
       workflows: workflows.map(workflow => ({
         id: workflow.id,
         name: workflow.name,
-        status: workflow.status || 'active',
-        executionCount: executions.filter((e: any) => e.workflowId === workflow.id).length,
-        lastExecution: executions.find((e: any) => e.workflowId === workflow.id)?.startedAt?.toISOString() || null
+        status: workflow.isActive ? 'active' : 'inactive',
+        executionCount: executions.filter((e: { workflowId: string }) => e.workflowId === workflow.id).length,
+        lastExecution: executions.find((e: { workflowId: string, startedAt: Date }) => e.workflowId === workflow.id)?.startedAt?.toISOString() || null
       }))
     };
     
