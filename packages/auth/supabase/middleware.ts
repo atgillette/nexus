@@ -6,9 +6,22 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+
+  // Validate JWT format for the anon key
+  if (!supabaseKey.startsWith('eyJ') || supabaseKey.includes(' ') || supabaseKey.includes('\n')) {
+    console.error('Invalid Supabase anon key format detected in middleware');
+    throw new Error('Invalid Supabase anon key format');
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
