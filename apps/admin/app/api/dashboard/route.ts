@@ -5,26 +5,27 @@ const prisma = new PrismaClient();
 
 export async function GET() {
   try {
+    console.log("Starting admin dashboard API...");
+    
     // Get dashboard metrics
     const [
       totalUsers,
       activeWorkflows,
-      totalExecutions,
+      allExecutions,
       recentUsers,
       recentExecutions,
     ] = await Promise.all([
       // Total users count
       prisma.user.count(),
       
-      // Active workflows count  
+      // Active workflows count (using isActive field)
       prisma.workflow.count({
-        where: { status: "active" }
+        where: { isActive: true }
       }),
       
-      // Total executions with success rate
-      prisma.workflowExecution.aggregate({
-        _count: { id: true },
-        _avg: { success: true }
+      // Get all executions to calculate success rate
+      prisma.workflowExecution.findMany({
+        select: { status: true }
       }),
       
       // Recent user registrations (last 5)
@@ -37,24 +38,30 @@ export async function GET() {
       // Recent workflow executions (last 10)
       prisma.workflowExecution.findMany({
         take: 10,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { startedAt: 'desc' },
         include: { 
           workflow: { include: { company: true } }
         }
       })
     ]);
 
-    // Calculate success rate
-    const successRate = Math.round((totalExecutions._avg.success || 0) * 100);
+    console.log(`Found ${totalUsers} users, ${activeWorkflows} active workflows, ${allExecutions.length} executions`);
+
+    // Calculate success rate (completed = success)
+    const totalExecutions = allExecutions.length;
+    const successfulExecutions = allExecutions.filter(e => e.status === 'completed').length;
+    const successRate = totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0;
     
     // Calculate revenue (mock calculation based on executions)
-    const monthlyRevenue = totalExecutions._count.id * 12.50; // $12.50 per execution average
+    const monthlyRevenue = totalExecutions * 12.50; // $12.50 per execution average
+    
+    console.log(`Success rate: ${successRate}%, Revenue: $${monthlyRevenue}`);
     
     return NextResponse.json({
       metrics: {
         totalUsers,
         activeWorkflows,
-        totalExecutions: totalExecutions._count.id,
+        totalExecutions,
         successRate,
         monthlyRevenue,
       },
@@ -62,15 +69,15 @@ export async function GET() {
         type: 'user_registered',
         user: `${user.firstName} ${user.lastName}`,
         email: user.email,
-        company: user.company.name,
+        company: user.company?.name || 'No Company',
         timestamp: user.createdAt
       })),
       recentExecutions: recentExecutions.map(execution => ({
-        type: execution.success ? 'execution_success' : 'execution_failed',
+        type: execution.status === 'completed' ? 'execution_success' : 'execution_failed',
         workflow: execution.workflow.name,
         company: execution.workflow.company.name,
-        timestamp: execution.createdAt,
-        success: execution.success
+        timestamp: execution.startedAt,
+        success: execution.status === 'completed'
       }))
     });
     

@@ -35,7 +35,7 @@ interface ClientDashboardData {
 
 async function getClientDashboardData(): Promise<ClientDashboardData> {
   try {
-    const response = await fetch('http://localhost:3002/api/dashboard', {
+    const response = await fetch('http://localhost:3002/api/dashboard-simple', {
       cache: 'no-store' // Always fetch fresh data
     });
     
