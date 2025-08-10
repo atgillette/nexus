@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start --port 3001",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "postinstall": "cd ../../packages/database && npm run db:generate"
   },
   "dependencies": {
     "@nexus/ui": "file:../../packages/ui",
