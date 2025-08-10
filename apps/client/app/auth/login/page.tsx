@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
+import { createBrowserClient } from "@nexus/auth";
 import { Button } from "@nexus/ui";
 import { AlertCircle, Loader2, Shield, Mail } from "lucide-react";
 
@@ -13,25 +13,13 @@ export default function ClientLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // Get environment variables - Next.js replaces these at build time
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://epbtaunemgnbolxilrwg.supabase.co';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYnRhdW5lbWduYm9seGlscndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2OTY3MDYsImV4cCI6MjA3MDI3MjcwNn0.8rXX2_MDxTlKSQ3QGhN72gaBVuV0629O00h-0M1hFqQ';
-
-  // Log environment variables on page load
-  console.log('🔍 Client Login Page - Environment check:');
-  console.log('URL:', supabaseUrl);
-  console.log('Key:', supabaseAnonKey ? 'Set' : 'Missing');
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
-      const supabase = createBrowserClient(
-        supabaseUrl,
-        supabaseAnonKey
-      );
+      const supabase = createBrowserClient();
       
       // Sign in with Supabase Auth
       const { error } = await supabase.auth.signInWithPassword({

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
+import { createBrowserClient } from "@nexus/auth";
 import { Button } from "@nexus/ui";
 import { AlertCircle, Loader2, Lock, Mail } from "lucide-react";
 
@@ -13,93 +13,19 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // Get environment variables - Next.js replaces these at build time
-  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  // Use fallback values if env vars are not set
-  const supabaseUrl = rawUrl || 'https://epbtaunemgnbolxilrwg.supabase.co';
-  const supabaseAnonKey = rawKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYnRhdW5lbWduYm9seGlscndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2OTY3MDYsImV4cCI6MjA3MDI3MjcwNn0.8rXX2_MDxTlKSQ3QGhN72gaBVuV0629O00h-0M1hFqQ';
-
-  // Log environment variables on page load with detailed checks
-  console.log('🔍 Admin Login Page - Detailed environment check:');
-  console.log('Raw URL from env:', rawUrl);
-  console.log('Raw Key from env:', rawKey ? `${rawKey.substring(0, 20)}...` : 'undefined');
-  console.log('URL type:', typeof supabaseUrl);
-  console.log('Key type:', typeof supabaseAnonKey);
-  console.log('URL value:', supabaseUrl);
-  console.log('URL encoded check:', encodeURIComponent(supabaseUrl));
-  console.log('Key length:', supabaseAnonKey?.length);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
-      console.log('Creating Supabase client with:', {
-        url: supabaseUrl,
-        keyLength: supabaseAnonKey?.length,
-        keyStart: supabaseAnonKey?.substring(0, 20)
-      });
+      const supabase = createBrowserClient();
       
-      // Test if the URL is accessible with detailed parameter checking
-      console.log('Testing URL accessibility...');
-      try {
-        const testUrl = `${supabaseUrl}/rest/v1/`;
-        console.log('Test URL:', testUrl);
-        console.log('Test URL type:', typeof testUrl);
-        console.log('Test URL length:', testUrl.length);
-        
-        const headers = {
-          'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${supabaseAnonKey}`
-        };
-        console.log('Headers object:', headers);
-        console.log('Headers stringified:', JSON.stringify(headers));
-        
-        const fetchOptions = {
-          method: 'GET',
-          headers: headers
-        };
-        console.log('Fetch options:', fetchOptions);
-        
-        // Test with minimal fetch first
-        console.log('Trying minimal fetch...');
-        const minimalResponse = await fetch(testUrl);
-        console.log('Minimal fetch succeeded:', minimalResponse.status);
-        
-      } catch (urlError) {
-        console.error('URL test failed:', urlError);
-        const error = urlError as Error;
-        console.log('Error details:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        });
-      }
-      
-      let supabase;
-      try {
-        supabase = createBrowserClient(
-          supabaseUrl,
-          supabaseAnonKey
-        );
-        console.log('Supabase client created successfully');
-      } catch (clientError) {
-        console.error('Failed to create Supabase client:', clientError);
-        setError('Failed to initialize authentication client');
-        setIsLoading(false);
-        return;
-      }
-      
-      console.log('Attempting sign in for:', email);
       // Sign in with Supabase Auth
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      console.log('Sign in response:', { error });
 
       if (error) {
         setError(error.message);
