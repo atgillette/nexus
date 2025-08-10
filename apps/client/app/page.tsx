@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@nexus/ui";
 import { PrismaClient, ExecutionStatus } from "@prisma/client";
+import { ClientGuard } from "@nexus/auth";
 
 const prisma = new PrismaClient();
 
@@ -160,7 +161,8 @@ function formatCurrency(amount: number): string {
 export default async function ClientDashboard() {
   const data = await getClientDashboardData();
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <ClientGuard>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -359,6 +361,7 @@ export default async function ClientDashboard() {
           </CardContent>
         </Card>
       </main>
-    </div>
+      </div>
+    </ClientGuard>
   );
 }

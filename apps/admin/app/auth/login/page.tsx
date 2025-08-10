@@ -1,73 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@nexus/auth";
 import { Button } from "@nexus/ui";
 import { AlertCircle, Loader2, Lock, Mail } from "lucide-react";
+import { adminLogin } from "./actions";
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (formData: FormData) => {
     setError("");
     setIsLoading(true);
 
     try {
-      const supabase = createBrowserClient();
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
       
-      // Sign in with Supabase Auth
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(error.message);
+      const result = await adminLogin({ email, password });
+      
+      if (result?.error) {
+        setError(result.error);
         setIsLoading(false);
         return;
       }
-
-      // Check if user has admin or SE role
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("role")
-        .eq("email", email)
-        .single();
-
-      if (userError || !userData) {
-        setError("Unable to verify user role");
-        await supabase.auth.signOut();
-        setIsLoading(false);
-        return;
-      }
-
-      if (userData.role !== "admin" && userData.role !== "se") {
-        setError("Access denied. This portal is for administrators only.");
-        await supabase.auth.signOut();
-        setIsLoading(false);
-        return;
-      }
-
-      // Wait for session to be fully established
-      console.log('Login successful, checking session...');
-      const { data: session } = await supabase.auth.getSession();
-      console.log('Session check:', session.session ? 'Session found' : 'No session');
       
-      setIsLoading(false);
-      
-      // Give a brief moment for auth state to propagate, then redirect
-      setTimeout(() => {
-        console.log('Redirecting to dashboard...');
-        router.push('/');
-        router.refresh();
-      }, 100);
-    } catch {
+      // Success case - the server action will handle redirect
+    } catch (err) {
+      // Check if this is a Next.js redirect error (which is expected)
+      if (err && typeof err === 'object' && 'digest' in err && 
+          typeof (err as any).digest === 'string' && 
+          (err as any).digest.startsWith('NEXT_REDIRECT')) {
+        // This is a redirect, not an actual error - let it propagate
+        throw err;
+      }
       setError("An unexpected error occurred");
       setIsLoading(false);
     }
@@ -91,7 +57,7 @@ export default function AdminLoginPage() {
           </div>
 
           {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form action={handleLogin} className="space-y-6">
             <div>
               <label
                 htmlFor="email"
@@ -103,9 +69,8 @@ export default function AdminLoginPage() {
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   id="email"
+                  name="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="admin@braintrust.com"
                   required
@@ -124,9 +89,8 @@ export default function AdminLoginPage() {
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   id="password"
+                  name="password"
                   type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="••••••••"
                   required

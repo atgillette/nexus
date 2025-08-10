@@ -1,6 +1,9 @@
 // Re-export browser client only to avoid server imports in client components
 export { createClient as createBrowserClient } from "./supabase/client";
 
+// Re-export route guards
+export { AdminGuard, ClientGuard } from "./route-guards";
+
 // Re-export types
 export type { UserRole, User } from "@nexus/types";
 

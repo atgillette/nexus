@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@nexus/ui";
 import { PrismaClient, ExecutionStatus } from "@prisma/client";
+import { AdminGuard } from "@nexus/auth";
 
 const prisma = new PrismaClient();
 
@@ -147,7 +148,8 @@ export default async function AdminDashboard() {
   const data = await getDashboardData();
   
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <AdminGuard>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -257,6 +259,7 @@ export default async function AdminDashboard() {
           </Card>
         </div>
       </main>
-    </div>
+      </div>
+    </AdminGuard>
   );
 }
