@@ -5,6 +5,22 @@ import { Button } from "@nexus/ui";
 import { AlertCircle, Loader2, Shield, Mail } from "lucide-react";
 import { clientLogin } from "./actions";
 
+// Type guard for Next.js redirect errors
+function isNextRedirectError(error: unknown): error is { digest: string } {
+  if (error === null || typeof error !== 'object') {
+    return false;
+  }
+  
+  if (!('digest' in error)) {
+    return false;
+  }
+  
+  const errorObj = error as Record<string, unknown>;
+  const digest = errorObj.digest;
+  
+  return typeof digest === 'string' && digest.startsWith('NEXT_REDIRECT');
+}
+
 export default function ClientLoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -28,9 +44,7 @@ export default function ClientLoginPage() {
       // Success case - the server action will handle redirect
     } catch (err) {
       // Check if this is a Next.js redirect error (which is expected)
-      if (err && typeof err === 'object' && err !== null && 'digest' in err && 
-          typeof (err as { digest: unknown }).digest === 'string' && 
-          (err as { digest: string }).digest.startsWith('NEXT_REDIRECT')) {
+      if (isNextRedirectError(err)) {
         // This is a redirect, not an actual error - let it propagate
         throw err;
       }
