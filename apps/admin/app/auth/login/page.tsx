@@ -43,6 +43,23 @@ export default function AdminLoginPage() {
         keyStart: supabaseAnonKey?.substring(0, 20)
       });
       
+      // Test if the URL is accessible
+      console.log('Testing URL accessibility...');
+      try {
+        const testUrl = `${supabaseUrl}/rest/v1/`;
+        console.log('Test URL:', testUrl);
+        const testResponse = await fetch(testUrl, {
+          method: 'GET',
+          headers: {
+            'apikey': supabaseAnonKey,
+            'Authorization': `Bearer ${supabaseAnonKey}`
+          }
+        });
+        console.log('URL test response:', testResponse.status, testResponse.statusText);
+      } catch (urlError) {
+        console.error('URL test failed:', urlError);
+      }
+      
       let supabase;
       try {
         supabase = createBrowserClient(
