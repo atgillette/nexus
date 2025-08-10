@@ -10,8 +10,9 @@ import { createTRPCContext } from "@nexus/trpc/server/trpc";
  */
 const createContext = async (req: NextRequest) => {
   return createTRPCContext({
-    headers: req.headers,
-  });
+    req,
+    res: new Response(),
+  } as Parameters<typeof createTRPCContext>[0]);
 };
 
 const handler = (req: NextRequest) =>

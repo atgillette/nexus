@@ -27,7 +27,7 @@ describe('adminLogin Server Action', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    mockCreateClient.mockResolvedValue(mockSupabase as any)
+    mockCreateClient.mockResolvedValue(mockSupabase as unknown as ReturnType<typeof createClient>)
     mockRedirect.mockImplementation(() => {
       throw new Error('NEXT_REDIRECT')
     })

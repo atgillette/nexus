@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import AdminLoginPage from '../page'
 import { adminLogin } from '../actions'
@@ -17,7 +17,7 @@ jest.mock('lucide-react', () => ({
 
 // Mock @nexus/ui Button component
 jest.mock('@nexus/ui', () => ({
-  Button: ({ children, disabled, ...props }: any) => (
+  Button: ({ children, disabled, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
     <button disabled={disabled} {...props}>
       {children}
     </button>
@@ -74,7 +74,7 @@ describe('AdminLoginPage', () => {
 
   describe('form submission', () => {
     it('submits form with valid credentials', async () => {
-      mockAdminLogin.mockResolvedValue(undefined) // Success case
+      mockAdminLogin.mockResolvedValue({ error: '' }) // Success case
 
       render(<AdminLoginPage />)
 
@@ -161,7 +161,7 @@ describe('AdminLoginPage', () => {
       })
 
       // Second submission should clear error
-      mockAdminLogin.mockResolvedValueOnce(undefined)
+      mockAdminLogin.mockResolvedValueOnce({ error: '' })
 
       await user.clear(emailInput)
       await user.clear(passwordInput)

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { ExecutionStatus } from "@nexus/database";
 
 import {
   createTRPCRouter,
@@ -55,7 +54,7 @@ export const dashboardRouter = createTRPCRouter({
 
       // Calculate success rate (completed = success)
       const totalExecutions = allExecutions.length;
-      const successfulExecutions = allExecutions.filter(e => e.status === ExecutionStatus.completed).length;
+      const successfulExecutions = allExecutions.filter(e => e.status === 'completed').length;
       const successRate = totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0;
       
       // Calculate revenue (mock calculation based on executions)
@@ -154,7 +153,7 @@ export const dashboardRouter = createTRPCRouter({
       
       // Calculate metrics (success = completed status)
       const totalExecutions = executions.length;
-      const successfulExecutions = executions.filter(e => e.status === ExecutionStatus.completed).length;
+      const successfulExecutions = executions.filter(e => e.status === 'completed').length;
       const successRate = totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0;
       const estimatedSavings = successfulExecutions * 50; // $50 per successful execution
       
@@ -178,7 +177,7 @@ export const dashboardRouter = createTRPCRouter({
         },
         recentExecutions: executions.slice(0, 10).map(execution => ({
           workflowName: workflows.find(w => w.id === execution.workflowId)?.name || 'Unknown',
-          success: execution.status === ExecutionStatus.completed,
+          success: execution.status === 'completed',
           timestamp: execution.startedAt.toISOString(),
           executionTime: execution.duration || 0
         })),
