@@ -24,7 +24,7 @@ export default function UnauthorizedPage() {
           {/* Message */}
           <div className="space-y-3 mb-8">
             <p className="text-gray-600 dark:text-gray-400">
-              You don't have permission to access this portal.
+              You don&apos;t have permission to access this portal.
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-500">
               This portal is for client users only. Please ensure:
@@ -32,7 +32,7 @@ export default function UnauthorizedPage() {
             <ul className="text-sm text-gray-500 dark:text-gray-500 space-y-1 text-left">
               <li>• You have a client role</li>
               <li>• Your account is associated with a company</li>
-              <li>• You're using the correct login credentials</li>
+              <li>• You&apos;re using the correct login credentials</li>
             </ul>
           </div>
 

@@ -28,9 +28,9 @@ export default function ClientLoginPage() {
       // Success case - the server action will handle redirect
     } catch (err) {
       // Check if this is a Next.js redirect error (which is expected)
-      if (err && typeof err === 'object' && 'digest' in err && 
-          typeof (err as any).digest === 'string' && 
-          (err as any).digest.startsWith('NEXT_REDIRECT')) {
+      if (err && typeof err === 'object' && err !== null && 'digest' in err && 
+          typeof (err as { digest: unknown }).digest === 'string' && 
+          (err as { digest: string }).digest.startsWith('NEXT_REDIRECT')) {
         // This is a redirect, not an actual error - let it propagate
         throw err;
       }
