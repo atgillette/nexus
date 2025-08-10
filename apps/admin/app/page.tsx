@@ -1,129 +1,8 @@
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@nexus/ui";
-import { PrismaClient, ExecutionStatus } from "@prisma/client";
-import { AdminGuard } from "@nexus/auth";
+import { api } from "@nexus/trpc/react";
 
-const prisma = new PrismaClient();
-
-interface DashboardData {
-  metrics: {
-    totalUsers: number;
-    activeWorkflows: number;
-    totalExecutions: number;
-    successRate: number;
-    monthlyRevenue: number;
-  };
-  recentActivity: Array<{
-    type: string;
-    user: string;
-    email: string;
-    company: string;
-    timestamp: string;
-  }>;
-  recentExecutions: Array<{
-    type: string;
-    workflow: string;
-    company: string;
-    timestamp: string;
-    success: boolean;
-  }>;
-}
-
-async function getDashboardData(): Promise<DashboardData> {
-  try {
-    console.log('Fetching dashboard data directly from database...');
-    
-    // Get dashboard metrics directly from database
-    const [
-      totalUsers,
-      activeWorkflows,
-      allExecutions,
-      recentUsers,
-      recentExecutions,
-    ] = await Promise.all([
-      // Total users count
-      prisma.user.count(),
-      
-      // Active workflows count (using isActive field)
-      prisma.workflow.count({
-        where: { isActive: true }
-      }),
-      
-      // Get all executions to calculate success rate
-      prisma.workflowExecution.findMany({
-        select: { status: true }
-      }),
-      
-      // Recent user registrations (last 5)
-      prisma.user.findMany({
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        include: { company: true }
-      }),
-      
-      // Recent workflow executions (last 10)
-      prisma.workflowExecution.findMany({
-        take: 10,
-        orderBy: { startedAt: 'desc' },
-        include: { 
-          workflow: { include: { company: true } }
-        }
-      })
-    ]);
-
-    console.log(`Found ${totalUsers} users, ${activeWorkflows} active workflows, ${allExecutions.length} executions`);
-
-    // Calculate success rate (completed = success)
-    const totalExecutions = allExecutions.length;
-    const successfulExecutions = allExecutions.filter((e: { status: ExecutionStatus }) => e.status === ExecutionStatus.completed).length;
-    const successRate = totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0;
-    
-    // Calculate revenue (mock calculation based on executions)
-    const monthlyRevenue = totalExecutions * 12.50; // $12.50 per execution average
-    
-    console.log(`Success rate: ${successRate}%, Revenue: $${monthlyRevenue}`);
-    
-    return {
-      metrics: {
-        totalUsers,
-        activeWorkflows,
-        totalExecutions,
-        successRate,
-        monthlyRevenue,
-      },
-      recentActivity: recentUsers.map(user => ({
-        type: 'user_registered',
-        user: `${user.firstName} ${user.lastName}`,
-        email: user.email,
-        company: user.company?.name || 'No Company',
-        timestamp: user.createdAt.toISOString()
-      })),
-      recentExecutions: recentExecutions.map(execution => ({
-        type: execution.status === 'completed' ? 'execution_success' : 'execution_failed',
-        workflow: execution.workflow.name,
-        company: execution.workflow.company.name,
-        timestamp: execution.startedAt.toISOString(),
-        success: execution.status === 'completed'
-      }))
-    };
-    
-  } catch (error) {
-    console.error('Error fetching dashboard data:', error);
-    // Return fallback data if API fails
-    return {
-      metrics: {
-        totalUsers: 0,
-        activeWorkflows: 0,
-        totalExecutions: 0,
-        successRate: 0,
-        monthlyRevenue: 0,
-      },
-      recentActivity: [],
-      recentExecutions: [],
-    };
-  } finally {
-    await prisma.$disconnect();
-  }
-}
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -144,17 +23,57 @@ function formatTimeAgo(timestamp: string): string {
   return `${Math.floor(diffMins / 1440)} days ago`;
 }
 
-export default async function AdminDashboard() {
-  const data = await getDashboardData();
+export default function AdminDashboard() {
+  const { data, isLoading, error } = api.dashboard.getAdminDashboard.useQuery();
   
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">Error loading dashboard: {error.message}</p>
+          {error.data?.code === 'UNAUTHORIZED' && (
+            <p className="mt-2">
+              <a href="/auth/login" className="text-blue-600 hover:underline">
+                Please log in
+              </a>
+            </p>
+          )}
+          {error.data?.code === 'FORBIDDEN' && (
+            <p className="mt-2 text-sm text-gray-600">Admin access required</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">No data available</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <AdminGuard>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Nexus Admin Dashboard
+            Nexus Admin Dashboard (TRPC)
           </h1>
         </div>
       </header>
@@ -169,7 +88,7 @@ export default async function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{data.metrics.totalUsers.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">Live from database</p>
+              <p className="text-xs text-muted-foreground">Via TRPC</p>
             </CardContent>
           </Card>
 
@@ -209,7 +128,7 @@ export default async function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Recent User Activity</CardTitle>
-              <CardDescription>Latest user registrations from database</CardDescription>
+              <CardDescription>Latest user registrations via TRPC</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -234,12 +153,12 @@ export default async function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>System Status</CardTitle>
-              <CardDescription>Current system health and performance</CardDescription>
+              <CardDescription>Current system health via TRPC</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">API Status</span>
+                  <span className="text-sm font-medium">TRPC Status</span>
                   <span className="text-sm text-green-600">Operational</span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -260,6 +179,5 @@ export default async function AdminDashboard() {
         </div>
       </main>
       </div>
-    </AdminGuard>
   );
 }
