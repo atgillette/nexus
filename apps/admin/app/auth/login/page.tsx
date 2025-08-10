@@ -14,13 +14,22 @@ export default function AdminLoginPage() {
   const router = useRouter();
 
   // Get environment variables - Next.js replaces these at build time
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://epbtaunemgnbolxilrwg.supabase.co';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYnRhdW5lbWduYm9seGlscndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2OTY3MDYsImV4cCI6MjA3MDI3MjcwNn0.8rXX2_MDxTlKSQ3QGhN72gaBVuV0629O00h-0M1hFqQ';
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  // Use fallback values if env vars are not set
+  const supabaseUrl = rawUrl || 'https://epbtaunemgnbolxilrwg.supabase.co';
+  const supabaseAnonKey = rawKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYnRhdW5lbWduYm9seGlscndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2OTY3MDYsImV4cCI6MjA3MDI3MjcwNn0.8rXX2_MDxTlKSQ3QGhN72gaBVuV0629O00h-0M1hFqQ';
 
-  // Log environment variables on page load
-  console.log('🔍 Admin Login Page - Environment check:');
-  console.log('URL:', supabaseUrl);
-  console.log('Key:', supabaseAnonKey ? 'Set' : 'Missing');
+  // Log environment variables on page load with detailed checks
+  console.log('🔍 Admin Login Page - Detailed environment check:');
+  console.log('Raw URL from env:', rawUrl);
+  console.log('Raw Key from env:', rawKey ? `${rawKey.substring(0, 20)}...` : 'undefined');
+  console.log('URL type:', typeof supabaseUrl);
+  console.log('Key type:', typeof supabaseAnonKey);
+  console.log('URL value:', supabaseUrl);
+  console.log('URL encoded check:', encodeURIComponent(supabaseUrl));
+  console.log('Key length:', supabaseAnonKey?.length);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,16 +37,33 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      const supabase = createBrowserClient(
-        supabaseUrl,
-        supabaseAnonKey
-      );
+      console.log('Creating Supabase client with:', {
+        url: supabaseUrl,
+        keyLength: supabaseAnonKey?.length,
+        keyStart: supabaseAnonKey?.substring(0, 20)
+      });
       
+      let supabase;
+      try {
+        supabase = createBrowserClient(
+          supabaseUrl,
+          supabaseAnonKey
+        );
+        console.log('Supabase client created successfully');
+      } catch (clientError) {
+        console.error('Failed to create Supabase client:', clientError);
+        setError('Failed to initialize authentication client');
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log('Attempting sign in for:', email);
       // Sign in with Supabase Auth
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+      console.log('Sign in response:', { error });
 
       if (error) {
         setError(error.message);
