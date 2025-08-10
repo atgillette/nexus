@@ -17,14 +17,18 @@ export async function GET() {
             }
           }
         },
-        users: true,
-        billingUsage: true
+        users: true
       }
     });
 
     if (!clientCompany) {
       return NextResponse.json({ error: "No client company found" }, { status: 404 });
     }
+
+    // Get billing usage separately (in case the relation has issues)
+    const billingUsage = await prisma.billingUsage.findFirst({
+      where: { companyId: clientCompany.id }
+    });
 
     // Calculate ROI metrics
     const totalExecutions = clientCompany.workflows.reduce(
@@ -54,8 +58,8 @@ export async function GET() {
       .slice(0, 10);
 
     // Get billing info
-    const currentBilling = clientCompany.billingUsage[0] || {
-      monthlyUsage: 0,
+    const currentBilling = billingUsage || {
+      monthlyUsage: totalExecutions, // Use actual executions as usage
       monthlyLimit: 1000,
       costPerExecution: 2.50
     };
@@ -75,10 +79,10 @@ export async function GET() {
           : 0
       },
       billing: {
-        monthlyUsage: currentBilling.monthlyUsage,
-        monthlyLimit: currentBilling.monthlyLimit,
-        costPerExecution: currentBilling.costPerExecution,
-        currentCost: currentBilling.monthlyUsage * currentBilling.costPerExecution
+        monthlyUsage: billingUsage?.monthlyUsage || totalExecutions,
+        monthlyLimit: billingUsage?.monthlyLimit || 1000,
+        costPerExecution: billingUsage?.costPerExecution || 2.50,
+        currentCost: (billingUsage?.monthlyUsage || totalExecutions) * (billingUsage?.costPerExecution || 2.50)
       },
       recentExecutions,
       workflows: clientCompany.workflows.map(workflow => ({
