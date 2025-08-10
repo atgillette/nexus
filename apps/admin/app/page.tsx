@@ -1,4 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@nexus/ui";
+import { PrismaClient, ExecutionStatus } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 interface DashboardData {
   metrics: {
@@ -26,25 +29,82 @@ interface DashboardData {
 
 async function getDashboardData(): Promise<DashboardData> {
   try {
-    // Use relative URL for API calls to avoid CORS issues
-    const apiUrl = '/api/dashboard';
-    console.log('Fetching dashboard data from:', apiUrl);
+    console.log('Fetching dashboard data directly from database...');
     
-    const response = await fetch(apiUrl, {
-      cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
+    // Get dashboard metrics directly from database
+    const [
+      totalUsers,
+      activeWorkflows,
+      allExecutions,
+      recentUsers,
+      recentExecutions,
+    ] = await Promise.all([
+      // Total users count
+      prisma.user.count(),
+      
+      // Active workflows count (using isActive field)
+      prisma.workflow.count({
+        where: { isActive: true }
+      }),
+      
+      // Get all executions to calculate success rate
+      prisma.workflowExecution.findMany({
+        select: { status: true }
+      }),
+      
+      // Recent user registrations (last 5)
+      prisma.user.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: { company: true }
+      }),
+      
+      // Recent workflow executions (last 10)
+      prisma.workflowExecution.findMany({
+        take: 10,
+        orderBy: { startedAt: 'desc' },
+        include: { 
+          workflow: { include: { company: true } }
+        }
+      })
+    ]);
+
+    console.log(`Found ${totalUsers} users, ${activeWorkflows} active workflows, ${allExecutions.length} executions`);
+
+    // Calculate success rate (completed = success)
+    const totalExecutions = allExecutions.length;
+    const successfulExecutions = allExecutions.filter((e: { status: ExecutionStatus }) => e.status === ExecutionStatus.completed).length;
+    const successRate = totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0;
     
-    if (!response.ok) {
-      console.error('Dashboard API response not OK:', response.status, response.statusText);
-      throw new Error(`API responded with ${response.status}: ${response.statusText}`);
-    }
+    // Calculate revenue (mock calculation based on executions)
+    const monthlyRevenue = totalExecutions * 12.50; // $12.50 per execution average
     
-    const data = await response.json();
-    console.log('Dashboard data fetched successfully');
-    return data;
+    console.log(`Success rate: ${successRate}%, Revenue: $${monthlyRevenue}`);
+    
+    return {
+      metrics: {
+        totalUsers,
+        activeWorkflows,
+        totalExecutions,
+        successRate,
+        monthlyRevenue,
+      },
+      recentActivity: recentUsers.map(user => ({
+        type: 'user_registered',
+        user: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        company: user.company?.name || 'No Company',
+        timestamp: user.createdAt.toISOString()
+      })),
+      recentExecutions: recentExecutions.map(execution => ({
+        type: execution.status === 'completed' ? 'execution_success' : 'execution_failed',
+        workflow: execution.workflow.name,
+        company: execution.workflow.company.name,
+        timestamp: execution.startedAt.toISOString(),
+        success: execution.status === 'completed'
+      }))
+    };
+    
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
     // Return fallback data if API fails
@@ -59,6 +119,8 @@ async function getDashboardData(): Promise<DashboardData> {
       recentActivity: [],
       recentExecutions: [],
     };
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
