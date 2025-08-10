@@ -34,8 +34,14 @@ interface ClientDashboardData {
 }
 
 async function getClientDashboardData(): Promise<ClientDashboardData> {
+  // Use absolute URL for server-side rendering
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+    (process.env.NODE_ENV === 'production' 
+      ? 'https://nexus-delta-vert.vercel.app' 
+      : 'http://localhost:3002');
+  
   try {
-    const response = await fetch('http://localhost:3002/api/dashboard-simple', {
+    const response = await fetch(`${baseUrl}/api/dashboard-simple`, {
       cache: 'no-store' // Always fetch fresh data
     });
     

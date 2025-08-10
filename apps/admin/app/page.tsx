@@ -25,8 +25,14 @@ interface DashboardData {
 }
 
 async function getDashboardData(): Promise<DashboardData> {
+  // Use absolute URL for server-side rendering
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+    (process.env.NODE_ENV === 'production' 
+      ? 'https://nexus-admin-one.vercel.app' 
+      : 'http://localhost:3001');
+  
   try {
-    const response = await fetch('http://localhost:3001/api/dashboard', {
+    const response = await fetch(`${baseUrl}/api/dashboard`, {
       cache: 'no-store' // Always fetch fresh data
     });
     
