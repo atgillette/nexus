@@ -71,10 +71,11 @@ export default function AdminLoginPage() {
         
       } catch (urlError) {
         console.error('URL test failed:', urlError);
+        const error = urlError as Error;
         console.log('Error details:', {
-          name: urlError.name,
-          message: urlError.message,
-          stack: urlError.stack
+          name: error.name,
+          message: error.message,
+          stack: error.stack
         });
       }
       
