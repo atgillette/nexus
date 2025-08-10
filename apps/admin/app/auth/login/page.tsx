@@ -13,6 +13,11 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  // Log environment variables on page load
+  console.log('🔍 Admin Login Page - Environment variables on load:');
+  console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set (hidden)' : 'UNDEFINED');
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
