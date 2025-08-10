@@ -25,22 +25,26 @@ interface DashboardData {
 }
 
 async function getDashboardData(): Promise<DashboardData> {
-  // Use absolute URL for server-side rendering
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-    (process.env.NODE_ENV === 'production' 
-      ? 'https://nexus-admin-one.vercel.app' 
-      : 'http://localhost:3001');
-  
   try {
-    const response = await fetch(`${baseUrl}/api/dashboard`, {
-      cache: 'no-store' // Always fetch fresh data
+    // Use relative URL for API calls to avoid CORS issues
+    const apiUrl = '/api/dashboard';
+    console.log('Fetching dashboard data from:', apiUrl);
+    
+    const response = await fetch(apiUrl, {
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      }
     });
     
     if (!response.ok) {
-      throw new Error('Failed to fetch dashboard data');
+      console.error('Dashboard API response not OK:', response.status, response.statusText);
+      throw new Error(`API responded with ${response.status}: ${response.statusText}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('Dashboard data fetched successfully');
+    return data;
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
     // Return fallback data if API fails
