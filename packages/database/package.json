@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@nexus/types": "file:../types",
-    "@prisma/client": "^6.1.0"
+    "@prisma/client": "^6.1.0",
+    "dotenv": "^17.2.1"
   },
   "devDependencies": {
     "prisma": "^6.1.0",

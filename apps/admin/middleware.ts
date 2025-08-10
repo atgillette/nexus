@@ -6,10 +6,10 @@ export async function middleware(request: NextRequest) {
     request,
   });
 
-  // Allow access to auth pages without authentication
+  // Allow access to auth pages and API routes without authentication
   if (
     request.nextUrl.pathname.startsWith("/auth/") ||
-    request.nextUrl.pathname.startsWith("/api/auth/")
+    request.nextUrl.pathname.startsWith("/api/")
   ) {
     return supabaseResponse;
   }

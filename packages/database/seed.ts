@@ -44,7 +44,7 @@ async function main() {
   // Create client users
   const acmeClient = await prisma.user.create({
     data: {
-      email: "john.doe@acme.com",
+      email: "john.doe@acmecorp.com",
       firstName: "John",
       lastName: "Doe",
       role: UserRole.client,
