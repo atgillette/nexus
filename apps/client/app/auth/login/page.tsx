@@ -22,7 +22,7 @@ export default function ClientLoginPage() {
       const supabase = createBrowserClient();
       
       // Sign in with Supabase Auth
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -64,7 +64,7 @@ export default function ClientLoginPage() {
       // Redirect to dashboard
       router.push("/");
       router.refresh();
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred");
       setIsLoading(false);
     }
@@ -164,7 +164,7 @@ export default function ClientLoginPage() {
               Forgot your password?
             </a>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <a
                 href="/auth/signup"
                 className="text-emerald-600 dark:text-emerald-400 hover:underline"

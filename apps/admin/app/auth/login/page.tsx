@@ -22,7 +22,7 @@ export default function AdminLoginPage() {
       const supabase = createBrowserClient();
       
       // Sign in with Supabase Auth
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -57,7 +57,7 @@ export default function AdminLoginPage() {
       // Redirect to dashboard
       router.push("/");
       router.refresh();
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred");
       setIsLoading(false);
     }
