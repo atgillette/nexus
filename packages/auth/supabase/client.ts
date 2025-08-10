@@ -8,11 +8,8 @@ export function createClient() {
     throw new Error('Missing Supabase environment variables. Please check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set.');
   }
 
-  // Validate JWT format for the anon key
-  if (!supabaseAnonKey.startsWith('eyJ') || supabaseAnonKey.includes(' ') || supabaseAnonKey.includes('\n')) {
-    console.error('Invalid Supabase anon key format detected');
-    throw new Error('Invalid Supabase anon key format');
-  }
+  // Clean the JWT token of any whitespace/newlines that might cause header issues
+  const cleanKey = supabaseAnonKey.replace(/[\s\n\r]/g, '');
   
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  return createBrowserClient(supabaseUrl, cleanKey);
 }

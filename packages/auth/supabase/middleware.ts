@@ -6,22 +6,21 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase environment variables');
-  }
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase environment variables in middleware');
+      return supabaseResponse;
+    }
 
-  // Validate JWT format for the anon key
-  if (!supabaseKey.startsWith('eyJ') || supabaseKey.includes(' ') || supabaseKey.includes('\n')) {
-    console.error('Invalid Supabase anon key format detected in middleware');
-    throw new Error('Invalid Supabase anon key format');
-  }
+    // Clean the JWT token of any whitespace/newlines that might cause header issues
+    const cleanKey = supabaseKey.replace(/[\s\n\r]/g, '');
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseKey,
+    const supabase = createServerClient(
+      supabaseUrl,
+      cleanKey,
     {
       cookies: {
         getAll() {
@@ -42,25 +41,31 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+    // Do not run code between createServerClient and
+    // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+    // issues with users being randomly logged out.
 
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-  await supabase.auth.getUser();
+    // IMPORTANT: DO NOT REMOVE auth.getUser()
+    await supabase.auth.getUser();
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
+    // IMPORTANT: You *must* return the supabaseResponse object as it is.
+    // If you're creating a new response object with NextResponse.next() make sure to:
+    // 1. Pass the request in it, like so:
+    //    const myNewResponse = NextResponse.next({ request })
+    // 2. Copy over the cookies, like so:
+    //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
+    // 3. Change the myNewResponse object to fit your needs, but avoid changing
+    //    the cookies!
+    // 4. Finally:
+    //    return myNewResponse
+    // If this is not done, you may be causing the browser and server to go out
+    // of sync and terminate the user's session prematurely!
 
-  return supabaseResponse;
+    return supabaseResponse;
+  } catch (error) {
+    // Log the error but don't crash the middleware
+    console.error('Middleware error:', error);
+    // Return a basic response to continue the request
+    return supabaseResponse;
+  }
 }

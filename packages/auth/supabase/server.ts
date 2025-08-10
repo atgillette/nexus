@@ -16,15 +16,12 @@ export async function createClient() {
     throw new Error('Missing Supabase environment variables');
   }
 
-  // Validate JWT format for the anon key
-  if (!supabaseKey.startsWith('eyJ') || supabaseKey.includes(' ') || supabaseKey.includes('\n')) {
-    console.error('Invalid Supabase anon key format detected');
-    throw new Error('Invalid Supabase anon key format');
-  }
+  // Clean the JWT token of any whitespace/newlines that might cause header issues
+  const cleanKey = supabaseKey.replace(/[\s\n\r]/g, '');
 
   return createServerClient(
     supabaseUrl,
-    supabaseKey,
+    cleanKey,
     {
       cookies: {
         getAll() {
