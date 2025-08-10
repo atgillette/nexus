@@ -128,9 +128,19 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // Redirect to dashboard
-      router.push("/");
-      router.refresh();
+      // Wait for session to be fully established
+      console.log('Login successful, checking session...');
+      const { data: session } = await supabase.auth.getSession();
+      console.log('Session check:', session.session ? 'Session found' : 'No session');
+      
+      setIsLoading(false);
+      
+      // Give a brief moment for auth state to propagate, then redirect
+      setTimeout(() => {
+        console.log('Redirecting to dashboard...');
+        router.push('/');
+        router.refresh();
+      }, 100);
     } catch {
       setError("An unexpected error occurred");
       setIsLoading(false);

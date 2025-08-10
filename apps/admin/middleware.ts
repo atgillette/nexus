@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@nexus/auth/supabase/server";
 
 export async function middleware(request: NextRequest) {
+  console.log('🔄 Middleware triggered for:', request.nextUrl.pathname);
+  
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -11,40 +13,23 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/auth/") ||
     request.nextUrl.pathname.startsWith("/api/")
   ) {
+    console.log('✅ Allowing access to auth/API route');
     return supabaseResponse;
   }
 
   // Create Supabase client
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+  const supabase = await createClient();
 
   // Check for authenticated user
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  console.log('👤 User check:', user ? `Found: ${user.email}` : 'No user found');
+
   // Redirect to login if not authenticated
   if (!user) {
+    console.log('❌ No user, redirecting to login');
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);
