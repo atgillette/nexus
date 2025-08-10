@@ -13,10 +13,14 @@ export default function ClientLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  // Get environment variables - Next.js replaces these at build time
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://epbtaunemgnbolxilrwg.supabase.co';
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYnRhdW5lbWduYm9seGlscndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2OTY3MDYsImV4cCI6MjA3MDI3MjcwNn0.8rXX2_MDxTlKSQ3QGhN72gaBVuV0629O00h-0M1hFqQ';
+
   // Log environment variables on page load
-  console.log('🔍 Client Login Page - Environment variables on load:');
-  console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set (hidden)' : 'UNDEFINED');
+  console.log('🔍 Client Login Page - Environment check:');
+  console.log('URL:', supabaseUrl);
+  console.log('Key:', supabaseAnonKey ? 'Set' : 'Missing');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,13 +28,9 @@ export default function ClientLoginPage() {
     setIsLoading(true);
 
     try {
-      console.log('🔍 Environment variables check:');
-      console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-      console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-      
       const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        supabaseUrl,
+        supabaseAnonKey
       );
       
       // Sign in with Supabase Auth
