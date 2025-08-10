@@ -32,7 +32,7 @@ export async function GET() {
     
     // Calculate metrics (success = completed status)
     const totalExecutions = executions.length;
-    const successfulExecutions = executions.filter(e => e.status === 'completed').length;
+    const successfulExecutions = executions.filter((e: any) => e.status === 'completed').length;
     const successRate = totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0;
     const estimatedSavings = successfulExecutions * 50; // $50 per successful execution
     
@@ -64,8 +64,8 @@ export async function GET() {
         id: workflow.id,
         name: workflow.name,
         status: workflow.status || 'active',
-        executionCount: executions.filter(e => e.workflowId === workflow.id).length,
-        lastExecution: executions.find(e => e.workflowId === workflow.id)?.startedAt?.toISOString() || null
+        executionCount: executions.filter((e: any) => e.workflowId === workflow.id).length,
+        lastExecution: executions.find((e: any) => e.workflowId === workflow.id)?.startedAt?.toISOString() || null
       }))
     };
     

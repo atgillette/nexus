@@ -36,7 +36,7 @@ export async function GET() {
     );
     
     const successfulExecutions = clientCompany.workflows.reduce(
-      (sum, workflow) => sum + workflow.executions.filter(e => e.success).length, 0
+      (sum, workflow) => sum + workflow.executions.filter((e: any) => e.success).length, 0
     );
 
     const successRate = totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0;
