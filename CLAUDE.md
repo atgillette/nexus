@@ -154,3 +154,5 @@ Required environment variables:
 - Run `npm run db:generate` for Prisma types
 - Check imports from shared packages
 - Verify TypeScript config paths
+- Before git commit, run ESLint and fix errors
+- Do not allow Typescript any
