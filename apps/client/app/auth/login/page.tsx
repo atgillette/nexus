@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@nexus/auth";
+import { createBrowserClient } from "@supabase/ssr";
 import { Button } from "@nexus/ui";
 import { AlertCircle, Loader2, Shield, Mail } from "lucide-react";
 
@@ -19,7 +19,14 @@ export default function ClientLoginPage() {
     setIsLoading(true);
 
     try {
-      const supabase = createBrowserClient();
+      console.log('🔍 Environment variables check:');
+      console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+      
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
       
       // Sign in with Supabase Auth
       const { error } = await supabase.auth.signInWithPassword({
