@@ -12,7 +12,11 @@ const createContext = async (req: NextRequest) => {
   return createTRPCContext({
     req,
     res: new Response(),
-  } as Parameters<typeof createTRPCContext>[0]);
+    info: {
+      isBatchCall: false,
+      calls: [],
+    },
+  } as unknown as Parameters<typeof createTRPCContext>[0]);
 };
 
 const handler = (req: NextRequest) =>
