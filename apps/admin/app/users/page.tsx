@@ -2,72 +2,46 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { AppLayout, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, Input, Label, Badge, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@nexus/ui";
-import { Edit, Trash2, Plus } from "lucide-react";
+import { AppLayout } from "@nexus/ui";
+import { Plus } from "lucide-react";
 import { api } from "@nexus/trpc/react";
-
-type UserRole = 'admin' | 'se';
-
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: 'admin' | 'se' | 'client';
-  phone?: string | null;
-  costRate?: number | null;
-  billRate?: number | null;
-  avatarUrl?: string | null;
-  isActive: boolean;
-  createdAt: Date;
-  assignedClients: string[];
-  companyAssignments: {
-    companyId: string;
-    companyName: string;
-  }[];
-}
-
-interface UserFormData {
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: 'admin' | 'se';
-  phone: string;
-  costRate: string;
-  billRate: string;
-  companyAssignments: string[];
-}
+import {
+  UserTable,
+  UserForm,
+  DeleteUserDialog,
+  UserTabs,
+} from "./components";
+import type { User, UserRole, UserFormData } from "./types";
 
 export default function UsersPage() {
-  const [activeTab, setActiveTab] = useState<UserRole>('admin');
+  const [activeTab, setActiveTab] = useState<UserRole>("admin");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [formData, setFormData] = useState<UserFormData>({
-    email: '',
-    firstName: '',
-    lastName: '',
-    role: 'se',
-    phone: '',
-    costRate: '',
-    billRate: '',
+    email: "",
+    firstName: "",
+    lastName: "",
+    role: "se",
+    phone: "",
+    costRate: "",
+    billRate: "",
     companyAssignments: [],
   });
 
   const router = useRouter();
-  
+
   // Get users based on active tab
   const { data: users, isLoading, error, refetch } = api.users.getUsers.useQuery({
-    role: activeTab
+    role: activeTab,
   });
-  
+
   const { data: profileData } = api.profile.getProfile.useQuery();
-  
+
   // Get companies for the form dropdown
   const { data: companies } = api.users.getCompanies.useQuery();
-  
+
   // Mutations
   const createUserMutation = api.users.createUser.useMutation({
     onSuccess: () => {
@@ -75,14 +49,14 @@ export default function UsersPage() {
       closeModal();
     },
   });
-  
+
   const updateUserMutation = api.users.updateUser.useMutation({
     onSuccess: () => {
       refetch();
       closeModal();
     },
   });
-  
+
   const deleteUserMutation = api.users.deleteUser.useMutation({
     onSuccess: () => {
       refetch();
@@ -95,13 +69,13 @@ export default function UsersPage() {
   const openAddUserModal = () => {
     setEditingUser(null);
     setFormData({
-      email: '',
-      firstName: '',
-      lastName: '',
+      email: "",
+      firstName: "",
+      lastName: "",
       role: activeTab,
-      phone: '',
-      costRate: '',
-      billRate: '',
+      phone: "",
+      costRate: "",
+      billRate: "",
       companyAssignments: [],
     });
     setIsModalOpen(true);
@@ -109,15 +83,16 @@ export default function UsersPage() {
 
   const openEditUserModal = (user: User) => {
     setEditingUser(user);
+    const role = user.role === "admin" || user.role === "se" ? user.role : "se";
     setFormData({
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
-      phone: user.phone || '',
-      costRate: user.costRate?.toString() || '',
-      billRate: user.billRate?.toString() || '',
-      companyAssignments: user.companyAssignments.map(c => c.companyId),
+      role,
+      phone: user.phone || "",
+      costRate: user.costRate?.toString() || "",
+      billRate: user.billRate?.toString() || "",
+      companyAssignments: user.companyAssignments.map((c) => c.companyId),
     });
     setIsModalOpen(true);
   };
@@ -134,7 +109,7 @@ export default function UsersPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const submitData = {
       ...formData,
       costRate: formData.costRate ? parseFloat(formData.costRate) : undefined,
@@ -158,17 +133,15 @@ export default function UsersPage() {
     }
   };
 
-  const handleInputChange = (field: keyof UserFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
   // Check if user has admin access
-  if (profileData && profileData.role !== 'admin') {
+  if (profileData && profileData.role !== "admin") {
     return (
       <AppLayout title="Access Denied" activeNavItem="users">
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <p className="text-destructive">Access denied. Admin privileges required.</p>
+            <p className="text-destructive">
+              Access denied. Admin privileges required.
+            </p>
           </div>
         </div>
       </AppLayout>
@@ -193,9 +166,11 @@ export default function UsersPage() {
       <AppLayout title="Manage Users" activeNavItem="users">
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <p className="text-destructive">Error loading users: {error.message}</p>
-            <button 
-              onClick={() => refetch()} 
+            <p className="text-destructive">
+              Error loading users: {error.message}
+            </p>
+            <button
+              onClick={() => refetch()}
               className="mt-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
             >
               Retry
@@ -206,32 +181,27 @@ export default function UsersPage() {
     );
   }
 
-  const formatCurrency = (amount: number | null | undefined): string => {
-    if (!amount) return 'N/A';
-    return `$${amount}/hr`;
-  };
-
-  const formatPhoneNumber = (phone: string | null | undefined): string => {
-    return phone || 'N/A';
-  };
-
   return (
     <AppLayout
       title="Manage Users"
       activeNavItem="users"
       userRole="admin"
       userAvatar={profileData?.avatarUrl || undefined}
-      userName={profileData ? `${profileData.firstName} ${profileData.lastName}` : undefined}
+      userName={
+        profileData
+          ? `${profileData.firstName} ${profileData.lastName}`
+          : undefined
+      }
       onNavigate={(href) => router.push(href)}
-      onProfileClick={() => router.push('/profile')}
-      onNotificationsClick={() => console.log('Notifications clicked')}
+      onProfileClick={() => router.push("/profile")}
+      onNotificationsClick={() => console.log("Notifications clicked")}
     >
       <div className="pt-16">
         <div className="px-4 py-6">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-2xl font-semibold">Manage Users</h1>
-            <button 
+            <button
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md flex items-center text-sm hover:bg-primary/90"
               onClick={openAddUserModal}
             >
@@ -241,320 +211,40 @@ export default function UsersPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex space-x-2 mb-6">
-            <button
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeTab === 'admin'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-background text-foreground border border-border hover:bg-accent hover:text-accent-foreground'
-              }`}
-              onClick={() => setActiveTab('admin')}
-            >
-              Admin Users
-            </button>
-            <button
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeTab === 'se'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-background text-foreground border border-border hover:bg-accent hover:text-accent-foreground'
-              }`}
-              onClick={() => setActiveTab('se')}
-            >
-              SE Users
-            </button>
-          </div>
+          <UserTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
           {/* Users Table */}
-          <div className="bg-card rounded-lg border border-border overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left border-b border-border">
-                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
-                      Phone
-                    </th>
-                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
-                      Cost Rate
-                    </th>
-                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
-                      Bill Rate
-                    </th>
-                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
-                      Assigned Clients
-                    </th>
-                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users && users.length > 0 ? (
-                    users.map((user: User) => (
-                      <tr
-                        key={user.id}
-                        className="border-b border-border last:border-0 hover:bg-accent/50 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center">
-                            <div className="h-8 w-8 rounded-full overflow-hidden mr-3 bg-muted flex items-center justify-center">
-                              {user.avatarUrl ? (
-                                <Image
-                                  src={user.avatarUrl}
-                                  alt={`${user.firstName} ${user.lastName} avatar`}
-                                  className="h-full w-full object-cover"
-                                  width={32}
-                                  height={32}
-                                />
-                              ) : (
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-                                </span>
-                              )}
-                            </div>
-                            <span className="font-medium text-foreground">
-                              {user.firstName} {user.lastName}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-foreground">
-                          {user.email}
-                        </td>
-                        <td className="px-6 py-4 text-foreground">
-                          {formatPhoneNumber(user.phone)}
-                        </td>
-                        <td className="px-6 py-4 text-foreground">
-                          {formatCurrency(user.costRate)}
-                        </td>
-                        <td className="px-6 py-4 text-foreground">
-                          {formatCurrency(user.billRate)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-2">
-                            {user.assignedClients.length > 0 ? (
-                              user.assignedClients.map((client, index) => (
-                                <Badge
-                                  key={index}
-                                  variant="secondary"
-                                >
-                                  {client}
-                                </Badge>
-                              ))
-                            ) : (
-                              <span className="text-muted-foreground text-sm">
-                                None assigned
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex space-x-3">
-                            <button 
-                              className="text-muted-foreground hover:text-foreground transition-colors"
-                              title="Edit user"
-                              onClick={() => openEditUserModal(user)}
-                            >
-                              <Edit className="h-5 w-5" />
-                            </button>
-                            <button 
-                              className="text-muted-foreground hover:text-destructive transition-colors"
-                              title="Delete user"
-                              onClick={() => openDeleteModal(user)}
-                            >
-                              <Trash2 className="h-5 w-5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
-                        No {activeTab} users found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <UserTable
+            users={users}
+            activeTab={activeTab}
+            onEditUser={openEditUserModal}
+            onDeleteUser={openDeleteModal}
+          />
         </div>
       </div>
 
       {/* Add/Edit User Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editingUser ? 'Edit User' : 'Add New User'}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="role">Role</Label>
-                <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="se">Sales Engineer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="+1 234 567 8900"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="costRate">Cost Rate ($/hr)</Label>
-                <Input
-                  id="costRate"
-                  type="number"
-                  step="0.01"
-                  value={formData.costRate}
-                  onChange={(e) => handleInputChange('costRate', e.target.value)}
-                  placeholder="75.00"
-                />
-              </div>
-              <div>
-                <Label htmlFor="billRate">Bill Rate ($/hr)</Label>
-                <Input
-                  id="billRate"
-                  type="number"
-                  step="0.01"
-                  value={formData.billRate}
-                  onChange={(e) => handleInputChange('billRate', e.target.value)}
-                  placeholder="150.00"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label>Assigned Companies</Label>
-              <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
-                {companies?.map((company) => (
-                  <label key={company.id} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.companyAssignments.includes(company.id)}
-                      onChange={(e) => {
-                        const updatedAssignments = e.target.checked
-                          ? [...formData.companyAssignments, company.id]
-                          : formData.companyAssignments.filter(id => id !== company.id);
-                        setFormData(prev => ({ ...prev, companyAssignments: updatedAssignments }));
-                      }}
-                      className="mr-2"
-                    />
-                    {company.name}
-                  </label>
-                ))}
-              </div>
-            </div>
-          </form>
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={closeModal}
-              disabled={createUserMutation.isPending || updateUserMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              onClick={handleSubmit}
-              disabled={createUserMutation.isPending || updateUserMutation.isPending}
-            >
-              {createUserMutation.isPending || updateUserMutation.isPending ? 'Saving...' : 
-               editingUser ? 'Update User' : 'Create User'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <UserForm
+        isOpen={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        editingUser={editingUser}
+        formData={formData}
+        onFormDataChange={setFormData}
+        companies={companies}
+        onSubmit={handleSubmit}
+        isSubmitting={
+          createUserMutation.isPending || updateUserMutation.isPending
+        }
+      />
 
       {/* Delete Confirmation Modal */}
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete User</DialogTitle>
-          </DialogHeader>
-          <p className="text-muted-foreground">
-            Are you sure you want to delete user{' '}
-            <span className="font-semibold text-foreground">
-              {userToDelete?.firstName} {userToDelete?.lastName}
-            </span>
-            ? This action cannot be undone.
-          </p>
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setIsDeleteModalOpen(false)}
-              disabled={deleteUserMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="button"
-              onClick={handleDelete}
-              disabled={deleteUserMutation.isPending}
-              variant="destructive"
-            >
-              {deleteUserMutation.isPending ? 'Deleting...' : 'Delete User'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteUserDialog
+        isOpen={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        userToDelete={userToDelete}
+        onConfirmDelete={handleDelete}
+        isDeleting={deleteUserMutation.isPending}
+      />
     </AppLayout>
   );
 }
