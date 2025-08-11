@@ -2,39 +2,45 @@
 > @nexus/admin@0.1.0 type-check
 > tsc --noEmit
 
-app/clients/[id]/edit/page.tsx(32,18): error TS2345: Argument of type '"domain"' is not assignable to parameter of type '"name" | "users" | "departments" | "solutionsEngineers" | "url" | `root.${string}` | "root" | `users.${number}` | `users.${number}.name` | `users.${number}.id` | `users.${number}.email` | `users.${number}.phone` | `users.${number}.departmentId` | `users.${number}.emailNotifications` | `users.${number}.smsNotificatio...'.
-app/clients/[id]/edit/page.tsx(47,5): error TS2322: Type 'Resolver<{ name: string; url: string; users?: { name?: string | undefined; id?: string | undefined; email?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; emailNotifications?: boolean | undefined; smsNotifications?: boolean | undefined; billingAccess?: boolean | undefined; adminAc...' is not assignable to type 'Resolver<{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; }[]; ur...'.
-  Types of parameters 'options' and 'options' are incompatible.
-    Type 'ResolverOptions<{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; ...' is not assignable to type 'ResolverOptions<{ name: string; url: string; users?: { name?: string | undefined; id?: string | undefined; email?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; emailNotifications?: boolean | undefined; smsNotifications?: boolean | undefined; billingAccess?: boolean | undefined; ...'.
-      Type '{ name?: string | undefined; id?: string | undefined; email?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; emailNotifications?: boolean | undefined; smsNotifications?: boolean | undefined; billingAccess?: boolean | undefined; adminAccess?: boolean | undefined; }[] | undefined' is not assignable to type '{ name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]'.
-        Type 'undefined' is not assignable to type '{ name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]'.
-app/clients/[id]/edit/page.tsx(50,7): error TS2353: Object literal may only specify known properties, and 'domain' does not exist in type 'AsyncDefaultValues<{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { .....'.
-app/clients/[id]/edit/page.tsx(60,9): error TS2353: Object literal may only specify known properties, and 'domain' does not exist in type '{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; }[]; url: string...'.
-app/clients/[id]/edit/page.tsx(71,20): error TS2339: Property 'domain' does not exist on type '{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; }[]; url: string...'.
-app/clients/[id]/edit/page.tsx(72,22): error TS2339: Property 'industry' does not exist on type '{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; }[]; url: string...'.
-app/clients/[id]/edit/page.tsx(136,44): error TS2345: Argument of type '(data: CompanyFormValues) => void' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
-  Types of parameters 'data' and 'data' are incompatible.
-    Type 'TFieldValues' is not assignable to type '{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; }[]; url: string...'.
-      Type 'FieldValues' is missing the following properties from type '{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; }[]; url: string...': name, users, departments, solutionsEngineers, url
-app/clients/[id]/edit/page.tsx(165,34): error TS2345: Argument of type '"domain"' is not assignable to parameter of type '"name" | "users" | "departments" | "solutionsEngineers" | "url" | `users.${number}` | `users.${number}.name` | `users.${number}.id` | `users.${number}.email` | `users.${number}.phone` | `users.${number}.departmentId` | `users.${number}.emailNotifications` | `users.${number}.smsNotifications` | `users.${number}.billi...'.
-app/clients/[id]/edit/page.tsx(166,44): error TS2339: Property 'domain' does not exist on type 'FieldErrors<{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; }[];...'.
-app/clients/[id]/edit/page.tsx(170,27): error TS2339: Property 'domain' does not exist on type 'FieldErrors<{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; }[];...'.
-app/clients/[id]/edit/page.tsx(172,31): error TS2339: Property 'domain' does not exist on type 'FieldErrors<{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; }[];...'.
-app/clients/[id]/edit/page.tsx(185,34): error TS2345: Argument of type '"industry"' is not assignable to parameter of type '"name" | "users" | "departments" | "solutionsEngineers" | "url" | `users.${number}` | `users.${number}.name` | `users.${number}.id` | `users.${number}.email` | `users.${number}.phone` | `users.${number}.departmentId` | `users.${number}.emailNotifications` | `users.${number}.smsNotifications` | `users.${number}.billi...'.
-app/clients/[id]/edit/page.tsx(186,44): error TS2339: Property 'industry' does not exist on type 'FieldErrors<{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; }[];...'.
-app/clients/[id]/edit/page.tsx(190,27): error TS2339: Property 'industry' does not exist on type 'FieldErrors<{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; }[];...'.
-app/clients/[id]/edit/page.tsx(192,31): error TS2339: Property 'industry' does not exist on type 'FieldErrors<{ name: string; users: { name: string; email: string; emailNotifications: boolean; smsNotifications: boolean; billingAccess: boolean; adminAccess: boolean; id?: string | undefined; phone?: string | undefined; departmentId?: string | undefined; }[]; departments: { ...; }[]; solutionsEngineers: { ...; }[];...'.
+app/clients/__tests__/NewClientPage.test.tsx(191,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'undefined' is not assignable to type 'Element | Node | Document | Window'.
+app/clients/__tests__/NewClientPage.test.tsx(215,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element'.
+  Type 'undefined' is not assignable to type 'Element'.
+app/clients/__tests__/NewClientPage.test.tsx(216,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element'.
+  Type 'undefined' is not assignable to type 'Element'.
+app/clients/__tests__/NewClientPage.test.tsx(311,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element'.
+  Type 'undefined' is not assignable to type 'Element'.
+app/clients/__tests__/NewClientPage.test.tsx(312,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element'.
+  Type 'undefined' is not assignable to type 'Element'.
+app/clients/__tests__/NewClientPage.test.tsx(387,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'undefined' is not assignable to type 'Element | Node | Document | Window'.
+app/clients/__tests__/NewClientPage.test.tsx(393,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'undefined' is not assignable to type 'Element | Node | Document | Window'.
+app/clients/__tests__/NewClientPage.test.tsx(396,25): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'undefined' is not assignable to type 'Element | Node | Document | Window'.
+app/clients/__tests__/validation.test.ts(28,16): error TS2532: Object is possibly 'undefined'.
+app/clients/__tests__/validation.test.ts(81,16): error TS2532: Object is possibly 'undefined'.
+app/clients/__tests__/validation.test.ts(94,16): error TS2532: Object is possibly 'undefined'.
+app/clients/__tests__/validation.test.ts(107,16): error TS2532: Object is possibly 'undefined'.
+app/clients/__tests__/validation.test.ts(134,16): error TS2532: Object is possibly 'undefined'.
+app/clients/__tests__/validation.test.ts(206,16): error TS2532: Object is possibly 'undefined'.
+app/clients/__tests__/validation.test.ts(272,16): error TS2532: Object is possibly 'undefined'.
+app/clients/__tests__/validation.test.ts(285,16): error TS2532: Object is possibly 'undefined'.
+app/clients/__tests__/validation.test.ts(306,18): error TS2532: Object is possibly 'undefined'.
+app/clients/__tests__/validation.test.ts(344,16): error TS2532: Object is possibly 'undefined'.
+app/clients/__tests__/validation.test.ts(375,16): error TS2532: Object is possibly 'undefined'.
+app/clients/__tests__/validation.test.ts(392,16): error TS2532: Object is possibly 'undefined'.
 app/users/__tests__/UsersPage.test.tsx(60,21): error TS7006: Parameter 'user' implicitly has an 'any' type.
-app/users/__tests__/UsersPage.test.tsx(243,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Window | Document'.
-  Type 'undefined' is not assignable to type 'Element | Node | Window | Document'.
-app/users/__tests__/UsersPage.test.tsx(254,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Window | Document'.
-  Type 'undefined' is not assignable to type 'Element | Node | Window | Document'.
-app/users/__tests__/UsersPage.test.tsx(279,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Window | Document'.
-  Type 'undefined' is not assignable to type 'Element | Node | Window | Document'.
-app/users/__tests__/UsersPage.test.tsx(290,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Window | Document'.
-  Type 'undefined' is not assignable to type 'Element | Node | Window | Document'.
-app/users/__tests__/UsersPage.test.tsx(312,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Window | Document'.
-  Type 'undefined' is not assignable to type 'Element | Node | Window | Document'.
+app/users/__tests__/UsersPage.test.tsx(243,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'undefined' is not assignable to type 'Element | Node | Document | Window'.
+app/users/__tests__/UsersPage.test.tsx(254,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'undefined' is not assignable to type 'Element | Node | Document | Window'.
+app/users/__tests__/UsersPage.test.tsx(279,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'undefined' is not assignable to type 'Element | Node | Document | Window'.
+app/users/__tests__/UsersPage.test.tsx(290,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'undefined' is not assignable to type 'Element | Node | Document | Window'.
+app/users/__tests__/UsersPage.test.tsx(312,23): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'undefined' is not assignable to type 'Element | Node | Document | Window'.
 app/users/__tests__/validation.test.ts(31,16): error TS2532: Object is possibly 'undefined'.
 app/users/__tests__/validation.test.ts(45,16): error TS2532: Object is possibly 'undefined'.
 app/users/__tests__/validation.test.ts(60,16): error TS2532: Object is possibly 'undefined'.

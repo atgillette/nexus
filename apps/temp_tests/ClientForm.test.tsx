@@ -2,20 +2,20 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ClientForm } from "../components/ClientForm";
-import type { CompanyFormValues } from "../validation";
 
 // Mock UI components
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 jest.mock("@nexus/ui", () => {
   const actual = jest.requireActual("@nexus/ui");
   return {
-    Button: actual.Button || (({ children, ...props }: any) => <button {...props}>{children}</button>),
-    Card: actual.Card || (({ children }: any) => <div>{children}</div>),
-    CardContent: actual.CardContent || (({ children }: any) => <div>{children}</div>),
-    Input: actual.Input || ((props: any) => <input {...props} />),
-    Label: actual.Label || (({ children, ...props }: any) => <label {...props}>{children}</label>),
-    Select: ({ children, onValueChange, value }: any) => {
-      const options = React.Children.toArray(children).filter((child: any) => 
-        child?.type === 'option' || child?.props?.value !== undefined
+    Button: actual.Button || (({ children, ...props }: React.PropsWithChildren<React.ButtonHTMLAttributes<HTMLButtonElement>>) => <button {...props}>{children}</button>),
+    Card: actual.Card || (({ children }: React.PropsWithChildren) => <div>{children}</div>),
+    CardContent: actual.CardContent || (({ children }: React.PropsWithChildren) => <div>{children}</div>),
+    Input: actual.Input || ((props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />),
+    Label: actual.Label || (({ children, ...props }: React.PropsWithChildren<React.LabelHTMLAttributes<HTMLLabelElement>>) => <label {...props}>{children}</label>),
+    Select: ({ children, onValueChange, value }: { children: React.ReactNode; onValueChange?: (value: string) => void; value?: string }) => {
+      const options = React.Children.toArray(children).filter((child): child is React.ReactElement => 
+        React.isValidElement(child) && (child.type === 'option' || child.props?.value !== undefined)
       );
       return (
         <select 
@@ -28,11 +28,11 @@ jest.mock("@nexus/ui", () => {
         </select>
       );
     },
-    SelectContent: ({ children }: any) => <>{children}</>,
-    SelectItem: ({ children, value }: any) => <option value={value}>{children}</option>,
-    SelectTrigger: ({ children }: any) => <div data-testid="select-trigger">{children}</div>,
-    SelectValue: ({ placeholder }: any) => <div data-testid="select-value">{placeholder}</div>,
-    Checkbox: ({ checked, onCheckedChange, ...props }: any) => (
+    SelectContent: ({ children }: React.PropsWithChildren) => <>{children}</>,
+    SelectItem: ({ children, value }: React.PropsWithChildren<{ value: string }>) => <option value={value}>{children}</option>,
+    SelectTrigger: ({ children }: React.PropsWithChildren) => <div data-testid="select-trigger">{children}</div>,
+    SelectValue: ({ placeholder }: { placeholder?: string }) => <div data-testid="select-value">{placeholder}</div>,
+    Checkbox: ({ checked, onCheckedChange, ...props }: { checked?: boolean; onCheckedChange?: (checked: boolean) => void } & React.InputHTMLAttributes<HTMLInputElement>) => (
       <input 
         type="checkbox" 
         checked={checked} 
@@ -177,7 +177,7 @@ describe("ClientForm", () => {
         ],
       };
 
-      render(<ClientForm {...defaultProps} editingClient={clientWithInvalidDept} />);
+      render(<ClientForm {...defaultProps} editingClient={clientWithInvalidDept as typeof mockEditingClient} />);
       
       // Should render without crashing and clear invalid department
       expect(screen.getByText("Edit Client")).toBeInTheDocument();

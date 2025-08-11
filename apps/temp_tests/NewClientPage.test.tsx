@@ -36,10 +36,9 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { children?: 
 type DivProps = React.HTMLAttributes<HTMLDivElement> & { children?: React.ReactNode };
 type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 type LabelProps = React.LabelHTMLAttributes<HTMLLabelElement> & { children?: React.ReactNode };
-type SpanProps = React.HTMLAttributes<HTMLSpanElement>;
-type CheckboxProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 // Mock UI components that might cause issues in tests
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 jest.mock("@nexus/ui", () => {
   const actual = jest.requireActual("@nexus/ui");
   return {
@@ -49,9 +48,9 @@ jest.mock("@nexus/ui", () => {
     CardContent: actual.CardContent || (({ children }: DivProps) => <div>{children}</div>),
     Input: actual.Input || ((props: InputProps) => <input {...props} />),
     Label: actual.Label || (({ children, ...props }: LabelProps) => <label {...props}>{children}</label>),
-    Select: ({ children, onValueChange, value }: any) => {
-      const options = React.Children.toArray(children).filter((child: any) => 
-        child?.type === 'option' || child?.props?.value !== undefined
+    Select: ({ children, onValueChange, value }: { children: React.ReactNode; onValueChange?: (value: string) => void; value?: string }) => {
+      const options = React.Children.toArray(children).filter((child): child is React.ReactElement => 
+        React.isValidElement(child) && (child.type === 'option' || child.props?.value !== undefined)
       );
       return (
         <select 
@@ -65,10 +64,10 @@ jest.mock("@nexus/ui", () => {
       );
     },
     SelectContent: ({ children }: DivProps) => <>{children}</>,
-    SelectItem: ({ children, value }: any) => <option value={value}>{children}</option>,
+    SelectItem: ({ children, value }: React.PropsWithChildren<{ value: string }>) => <option value={value}>{children}</option>,
     SelectTrigger: ({ children }: DivProps) => <div data-testid="select-trigger">{children}</div>,
-    SelectValue: ({ placeholder }: any) => <div data-testid="select-value">{placeholder}</div>,
-    Checkbox: ({ checked, onCheckedChange, ...props }: any) => (
+    SelectValue: ({ placeholder }: { placeholder?: string }) => <div data-testid="select-value">{placeholder}</div>,
+    Checkbox: ({ checked, onCheckedChange, ...props }: { checked?: boolean; onCheckedChange?: (checked: boolean) => void } & React.InputHTMLAttributes<HTMLInputElement>) => (
       <input 
         type="checkbox" 
         checked={checked} 
