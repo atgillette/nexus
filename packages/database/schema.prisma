@@ -4,81 +4,73 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [uuid_ossp(map: "uuid-ossp", schema: "extensions")]
 }
 
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  firstName   String
-  lastName    String
-  role        UserRole
-  companyId   String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  company       Company?      @relation(fields: [companyId], references: [id])
+  id            String         @id @default(cuid())
+  email         String         @unique
+  firstName     String
+  lastName      String
+  role          UserRole
+  avatarUrl     String?
+  companyId     String?
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   notifications Notification[]
+  company       Company?       @relation(fields: [companyId], references: [id])
 
   @@map("users")
 }
 
 model Company {
-  id        String   @id @default(cuid())
-  name      String
-  domain    String   @unique
-  industry  String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  users       User[]
-  workflows   Workflow[]
-  credentials Credential[]
+  id           String         @id @default(cuid())
+  name         String
+  domain       String         @unique
+  industry     String?
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
   billingUsage BillingUsage[]
+  credentials  Credential[]
+  users        User[]
+  workflows    Workflow[]
 
   @@map("companies")
 }
 
 model Workflow {
-  id          String   @id @default(cuid())
+  id          String              @id @default(cuid())
   name        String
   description String?
   companyId   String
-  isActive    Boolean  @default(true)
-  config      Json     @default("{}")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  company    Company              @relation(fields: [companyId], references: [id])
-  executions WorkflowExecution[]
+  isActive    Boolean             @default(true)
+  config      Json                @default("{}")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  executions  WorkflowExecution[]
+  company     Company             @relation(fields: [companyId], references: [id])
 
   @@map("workflows")
 }
 
 model WorkflowExecution {
-  id           String            @id @default(cuid())
-  workflowId   String
-  status       ExecutionStatus   @default(pending)
-  startedAt    DateTime          @default(now())
-  completedAt  DateTime?
-  duration     Int?              // in milliseconds
-  result       Json?
-  error        String?
-  
-  // Metrics for ROI calculation
-  itemsProcessed Int @default(0)
-  timeSaved      Int @default(0) // in minutes
-  costSavings    Float @default(0) // in dollars
-
-  // Relations
-  workflow Workflow @relation(fields: [workflowId], references: [id])
+  id             String          @id @default(cuid())
+  workflowId     String
+  status         ExecutionStatus @default(pending)
+  startedAt      DateTime        @default(now())
+  completedAt    DateTime?
+  duration       Int?
+  result         Json?
+  error          String?
+  itemsProcessed Int             @default(0)
+  timeSaved      Int             @default(0)
+  costSavings    Float           @default(0)
+  workflow       Workflow        @relation(fields: [workflowId], references: [id])
 
   @@map("workflow_executions")
 }
@@ -89,12 +81,9 @@ model Credential {
   type      String
   companyId String
   isActive  Boolean  @default(true)
-  // Encrypted credential data stored separately for security
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
-  company Company @relation(fields: [companyId], references: [id])
+  company   Company  @relation(fields: [companyId], references: [id])
 
   @@map("credentials")
 }
@@ -102,18 +91,16 @@ model Credential {
 model BillingUsage {
   id             String   @id @default(cuid())
   companyId      String
-  month          Int      // 1-12
+  month          Int
   year           Int
   executionCount Int      @default(0)
-  totalTimeSaved Int      @default(0) // in minutes
-  totalCostSaved Float    @default(0) // in dollars
+  totalTimeSaved Int      @default(0)
+  totalCostSaved Float    @default(0)
   billingAmount  Float    @default(0)
   isPaid         Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  // Relations
-  company Company @relation(fields: [companyId], references: [id])
+  company        Company  @relation(fields: [companyId], references: [id])
 
   @@unique([companyId, month, year])
   @@map("billing_usage")
@@ -127,17 +114,14 @@ model Notification {
   type      NotificationType @default(info)
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
-
-  // Relations
-  user User @relation(fields: [userId], references: [id])
+  user      User             @relation(fields: [userId], references: [id])
 
   @@map("notifications")
 }
 
-// Enums
 enum UserRole {
   admin
-  se    // Sales Engineer
+  se
   client
 }
 

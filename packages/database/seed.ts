@@ -29,6 +29,7 @@ async function main() {
       firstName: "Admin",
       lastName: "User",
       role: UserRole.admin,
+      avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
     },
   });
 
@@ -38,6 +39,7 @@ async function main() {
       firstName: "Sales",
       lastName: "Engineer",
       role: UserRole.se,
+      avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
     },
   });
 
@@ -49,6 +51,7 @@ async function main() {
       lastName: "Doe",
       role: UserRole.client,
       companyId: acmeCompany.id,
+      avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
     },
   });
 
@@ -59,6 +62,7 @@ async function main() {
       lastName: "Smith",
       role: UserRole.client,
       companyId: techStartup.id,
+      avatarUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b29c?w=150&h=150&fit=crop&crop=face",
     },
   });
 

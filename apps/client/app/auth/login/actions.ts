@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from "@nexus/auth/supabase/server";
+import { db } from "@nexus/database";
 
 interface LoginFormData {
   email: string;
@@ -22,26 +23,39 @@ export async function clientLogin(data: LoginFormData) {
     return { error: error.message };
   }
 
-  // Check if user has client role and company association
-  const { data: userData, error: userError } = await supabase
-    .from("users")
-    .select("role, companyId")
-    .eq("email", data.email)
-    .single();
+  // Get the authenticated user ID
+  const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+  
+  if (sessionError || !user) {
+    await supabase.auth.signOut();
+    return { error: "Unable to get user session" };
+  }
 
-  if (userError || !userData) {
+  // Check if user has client role and company association using Prisma
+  try {
+    const userData = await db.user.findUnique({
+      where: { id: user.id },
+      select: { role: true, companyId: true }
+    });
+
+    if (!userData) {
+      await supabase.auth.signOut();
+      return { error: "Unable to verify user access" };
+    }
+
+    if (userData.role !== "client") {
+      await supabase.auth.signOut();
+      return { error: "Access denied. This portal is for clients only." };
+    }
+
+    if (!userData.companyId) {
+      await supabase.auth.signOut();
+      return { error: "Your account is not associated with a company. Please contact support." };
+    }
+  } catch (dbError) {
+    console.error('Database error during login:', dbError);
     await supabase.auth.signOut();
     return { error: "Unable to verify user access" };
-  }
-
-  if (userData.role !== "client") {
-    await supabase.auth.signOut();
-    return { error: "Access denied. This portal is for clients only." };
-  }
-
-  if (!userData.companyId) {
-    await supabase.auth.signOut();
-    return { error: "Your account is not associated with a company. Please contact support." };
   }
 
   // Success - revalidate and redirect

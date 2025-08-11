@@ -37,7 +37,15 @@ export const dashboardRouter = createTRPCRouter({
         ctx.db.user.findMany({
           take: 5,
           orderBy: { createdAt: 'desc' },
-          include: { company: true }
+          select: { 
+            id: true,
+            firstName: true, 
+            lastName: true, 
+            email: true, 
+            avatarUrl: true,
+            createdAt: true,
+            company: { select: { name: true } }
+          }
         }),
         
         // Recent workflow executions (last 10)
@@ -74,6 +82,7 @@ export const dashboardRouter = createTRPCRouter({
           type: 'user_registered' as const,
           user: `${user.firstName} ${user.lastName}`,
           email: user.email,
+          avatarUrl: user.avatarUrl,
           company: user.company?.name || 'No Company',
           timestamp: user.createdAt.toISOString()
         })),

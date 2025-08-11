@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from "@nexus/auth/supabase/server";
+import { db } from "@nexus/database";
 
 interface LoginFormData {
   email: string;
@@ -22,21 +23,34 @@ export async function adminLogin(data: LoginFormData) {
     return { error: error.message };
   }
 
-  // Check if user has admin or SE role
-  const { data: userData, error: userError } = await supabase
-    .from("users")
-    .select("role")
-    .eq("email", data.email)
-    .single();
-
-  if (userError || !userData) {
+  // Get the authenticated user ID
+  const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+  
+  if (sessionError || !user) {
     await supabase.auth.signOut();
-    return { error: "Unable to verify user role" };
+    return { error: "Unable to get user session" };
   }
 
-  if (userData.role !== "admin" && userData.role !== "se") {
+  // Check if user has admin or SE role using Prisma
+  try {
+    const userData = await db.user.findUnique({
+      where: { id: user.id },
+      select: { role: true }
+    });
+
+    if (!userData) {
+      await supabase.auth.signOut();
+      return { error: "Unable to verify user role" };
+    }
+
+    if (userData.role !== "admin" && userData.role !== "se") {
+      await supabase.auth.signOut();
+      return { error: "Access denied. This portal is for administrators only." };
+    }
+  } catch (dbError) {
+    console.error('Database error during login:', dbError);
     await supabase.auth.signOut();
-    return { error: "Access denied. This portal is for administrators only." };
+    return { error: "Unable to verify user role" };
   }
 
   // Success - revalidate and redirect

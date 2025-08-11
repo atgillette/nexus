@@ -10,3 +10,4 @@ export type { UserRole, User } from "@nexus/types";
 // Server-only exports should be imported directly from their files:
 // - import { createClient as createServerClient } from "@nexus/auth/supabase/server";
 // - import { updateSession } from "@nexus/auth/supabase/middleware";
+// - import { uploadProfilePicture, deleteProfilePicture } from "@nexus/auth/profile-actions";

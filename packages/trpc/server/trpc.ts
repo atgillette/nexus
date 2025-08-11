@@ -115,26 +115,32 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
  * If you want a query or mutation to ONLY be accessible to admin/SE users, use this.
  */
 export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  const supabase = await createClient();
-  const { data: userData } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", ctx.session.user.id)
-    .single();
+  try {
+    // Look up user by ID (now synced with auth ID)
+    const userData = await ctx.db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { role: true }
+    });
 
-  if (!userData || (userData.role !== "admin" && userData.role !== "se")) {
+    if (!userData || (userData.role !== "admin" && userData.role !== "se")) {
+      throw new TRPCError({ 
+        code: "FORBIDDEN", 
+        message: "Admin/SE access required" 
+      });
+    }
+
+    return next({
+      ctx: {
+        session: ctx.session,
+        userRole: userData.role as "admin" | "se",
+      },
+    });
+  } catch (error) {
     throw new TRPCError({ 
-      code: "FORBIDDEN", 
-      message: "Admin/SE access required" 
+      code: "INTERNAL_SERVER_ERROR", 
+      message: "Unable to verify user role" 
     });
   }
-
-  return next({
-    ctx: {
-      session: ctx.session,
-      userRole: userData.role as "admin" | "se",
-    },
-  });
 });
 
 /**
@@ -143,25 +149,31 @@ export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
  * If you want a query or mutation to ONLY be accessible to client users, use this.
  */
 export const clientProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  const supabase = await createClient();
-  const { data: userData } = await supabase
-    .from("users")
-    .select("role, companyId")
-    .eq("id", ctx.session.user.id)
-    .single();
+  try {
+    // Look up user by ID (now synced with auth ID)
+    const userData = await ctx.db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { role: true, companyId: true }
+    });
 
-  if (!userData || userData.role !== "client" || !userData.companyId) {
+    if (!userData || userData.role !== "client" || !userData.companyId) {
+      throw new TRPCError({ 
+        code: "FORBIDDEN", 
+        message: "Client access required" 
+      });
+    }
+
+    return next({
+      ctx: {
+        session: ctx.session,
+        userRole: userData.role as "client",
+        companyId: userData.companyId,
+      },
+    });
+  } catch (error) {
     throw new TRPCError({ 
-      code: "FORBIDDEN", 
-      message: "Client access required" 
+      code: "INTERNAL_SERVER_ERROR", 
+      message: "Unable to verify user role" 
     });
   }
-
-  return next({
-    ctx: {
-      session: ctx.session,
-      userRole: userData.role as "client",
-      companyId: userData.companyId,
-    },
-  });
 });

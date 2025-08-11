@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@nexus/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, ProfilePicture } from "@nexus/ui";
 import { api } from "@nexus/trpc/react";
 
 
@@ -135,6 +135,11 @@ export default function AdminDashboard() {
                 {data.recentActivity.length > 0 ? (
                   data.recentActivity.map((activity, index) => (
                     <div key={index} className="flex items-center">
+                      <ProfilePicture
+                        currentAvatarUrl={activity.avatarUrl}
+                        userInitials={activity.user.split(' ').map(n => n[0]).join('')}
+                        size="sm"
+                      />
                       <div className="ml-4 space-y-1">
                         <p className="text-sm font-medium">New user registered</p>
                         <p className="text-sm text-muted-foreground">
