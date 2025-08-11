@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { Button } from "./ui/button";
 import { uploadProfilePicture, deleteProfilePicture } from "@nexus/auth/profile-actions";
 import { api } from "@nexus/trpc/react";
@@ -55,7 +56,7 @@ export function ProfilePicture({
         setError(result.error || 'Upload failed');
         setPreviewUrl(null);
       }
-    } catch (err) {
+    } catch {
       setError('Upload failed');
       setPreviewUrl(null);
     } finally {
@@ -63,25 +64,6 @@ export function ProfilePicture({
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-    }
-  };
-
-  const handleDelete = async () => {
-    setIsUploading(true);
-    setError(null);
-
-    try {
-      const result = await deleteProfilePicture();
-
-      if (result.success) {
-        await utils.profile.getProfile.invalidate();
-      } else {
-        setError(result.error || 'Delete failed');
-      }
-    } catch (err) {
-      setError('Delete failed');
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -104,9 +86,11 @@ export function ProfilePicture({
         ${isUploading ? 'opacity-50' : ''}
       `}>
         {avatarUrl ? (
-          <img
+          <Image
             src={avatarUrl}
             alt="Profile"
+            width={size === 'sm' ? 32 : size === 'md' ? 48 : 80}
+            height={size === 'sm' ? 32 : size === 'md' ? 48 : 80}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -179,7 +163,7 @@ export function ProfilePictureUpload({
       } else {
         setError(result.error || 'Upload failed');
       }
-    } catch (err) {
+    } catch {
       setError('Upload failed');
     } finally {
       setIsUploading(false);
@@ -201,7 +185,7 @@ export function ProfilePictureUpload({
       } else {
         setError(result.error || 'Delete failed');
       }
-    } catch (err) {
+    } catch {
       setError('Delete failed');
     } finally {
       setIsUploading(false);

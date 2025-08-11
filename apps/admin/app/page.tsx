@@ -2,29 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, ProfilePicture, AppLayout, TimeFilter } from "@nexus/ui";
+import { AppLayout, TimeFilter } from "@nexus/ui";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { api } from "@nexus/trpc/react";
 
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
-}
-
-function formatTimeAgo(timestamp: string): string {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins} minutes ago`;
-  if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
-  return `${Math.floor(diffMins / 1440)} days ago`;
-}
 
 export default function AdminDashboard() {
   const { data, isLoading, error } = api.dashboard.getAdminDashboard.useQuery();
@@ -89,7 +71,6 @@ export default function AdminDashboard() {
       onNavigate={(href) => router.push(href)}
       onProfileClick={() => router.push('/profile')}
       onNotificationsClick={() => console.log('Notifications clicked')}
-      onSettingsClick={() => console.log('Settings clicked')}
     >
       <div className="pt-16">
         <div className="px-4 py-6">

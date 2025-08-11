@@ -1,7 +1,6 @@
 'use client';
 
 import { Bell, Menu } from 'lucide-react';
-import { cn } from './utils';
 import Image from 'next/image';
 import { BrainTrustLogo } from './index';
 
@@ -58,9 +57,11 @@ export function Header({
         <div className="flex items-center" onClick={onProfileClick}>
           <div className="h-8 w-8 rounded-full overflow-hidden">
             {userAvatar ? (
-              <img
+              <Image
                 src={userAvatar}
                 alt={userName || 'User avatar'}
+                width={32}
+                height={32}
                 className="h-full w-full object-cover"
               />
             ) : (

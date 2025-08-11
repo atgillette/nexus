@@ -14,7 +14,6 @@ interface AppLayoutProps {
   onNavigate?: (href: string) => void;
   onProfileClick?: () => void;
   onNotificationsClick?: () => void;
-  onSettingsClick?: () => void;
 }
 
 export function AppLayout({
@@ -27,7 +26,6 @@ export function AppLayout({
   onNavigate,
   onProfileClick,
   onNotificationsClick,
-  onSettingsClick,
 }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
