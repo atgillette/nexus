@@ -203,6 +203,67 @@ async function main() {
     ],
   });
 
+  // Create subscription plans
+  const plans = await prisma.subscriptionPlan.createMany({
+    data: [
+      {
+        name: "Enterprise Pro",
+        pricingModel: "tiered",
+        contractLength: 12,
+        contractTimeUnit: "month",
+        billingCadence: "monthly",
+        setupFee: 5000,
+        prepaymentPercent: 25,
+        capAmount: 100000,
+        overageCostRate: 150,
+      },
+      {
+        name: "Business Plus",
+        pricingModel: "fixed",
+        contractLength: 6,
+        contractTimeUnit: "month",
+        billingCadence: "quarterly",
+        setupFee: 2500,
+        prepaymentPercent: 15,
+        capAmount: 50000,
+        overageCostRate: 125,
+      },
+      {
+        name: "Starter",
+        pricingModel: "usage",
+        contractLength: 3,
+        contractTimeUnit: "month",
+        billingCadence: "monthly",
+        setupFee: 1000,
+        prepaymentPercent: 10,
+        capAmount: 25000,
+        overageCostRate: 100,
+      },
+    ],
+  });
+
+  // Get the created plans to assign to companies
+  const starterPlan = await prisma.subscriptionPlan.findUnique({
+    where: { name: "Starter" }
+  });
+  const businessPlan = await prisma.subscriptionPlan.findUnique({
+    where: { name: "Business Plus" }
+  });
+
+  // Assign plans to existing companies
+  if (starterPlan) {
+    await prisma.company.update({
+      where: { domain: "techcorp.com" },
+      data: { subscriptionPlanId: starterPlan.id }
+    });
+  }
+  if (businessPlan) {
+    await prisma.company.update({
+      where: { domain: "innovate.com" },
+      data: { subscriptionPlanId: businessPlan.id }
+    });
+  }
+
   console.log("✅ Database seeded successfully!");
   console.log(`📊 Created:`);
   console.log(`   - 2 companies`);
@@ -212,6 +273,7 @@ async function main() {
   console.log(`   - 2 credentials`);
   console.log(`   - 2 billing records`);
   console.log(`   - 3 notifications`);
+  console.log(`   - 3 subscription plans`);
 }
 
 main()

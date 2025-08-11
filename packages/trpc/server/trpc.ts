@@ -39,6 +39,7 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
 
   return {
     db,
+    prisma: db, // Add prisma alias for backward compatibility
     session,
     req,
     res,
@@ -131,11 +132,20 @@ export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
 
     return next({
       ctx: {
+        ...ctx,
+        db: ctx.db,
+        prisma: ctx.db, // Ensure prisma is available
         session: ctx.session,
         userRole: userData.role as "admin" | "se",
       },
     });
   } catch (error) {
+    // Re-throw TRPCError as-is
+    if (error instanceof TRPCError) {
+      throw error;
+    }
+    // Log unexpected errors
+    console.error("adminProcedure error:", error);
     throw new TRPCError({ 
       code: "INTERNAL_SERVER_ERROR", 
       message: "Unable to verify user role" 
@@ -165,6 +175,7 @@ export const clientProcedure = protectedProcedure.use(async ({ ctx, next }) => {
 
     return next({
       ctx: {
+        ...ctx,
         session: ctx.session,
         userRole: userData.role as "client",
         companyId: userData.companyId,

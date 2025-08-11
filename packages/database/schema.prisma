@@ -46,6 +46,7 @@ model Company {
   isActive     Boolean                  @default(true)
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
+  subscriptionPlanId String?
   billingUsage BillingUsage[]
   credentials  Credential[]
   users        User[]
@@ -53,6 +54,7 @@ model Company {
   departments  Department[]
   userAssignments UserCompanyAssignment[]
   seAssignments CompanySEAssignment[]
+  subscriptionPlan SubscriptionPlan?     @relation(fields: [subscriptionPlanId], references: [id])
 
   @@map("companies")
 }
@@ -192,4 +194,41 @@ enum NotificationType {
   success
   warning
   error
+}
+
+model SubscriptionPlan {
+  id                String              @id @default(cuid())
+  name              String              @unique
+  pricingModel      PricingModel
+  contractLength    Int
+  contractTimeUnit  ContractTimeUnit
+  billingCadence    BillingCadence
+  setupFee          Float               @default(0)
+  prepaymentPercent Float               @default(0)
+  capAmount         Float               @default(0)
+  overageCostRate   Float               @default(0)
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  companies         Company[]
+
+  @@map("subscription_plans")
+}
+
+enum PricingModel {
+  tiered
+  fixed
+  usage
+}
+
+enum ContractTimeUnit {
+  month
+  quarter
+  year
+}
+
+enum BillingCadence {
+  monthly
+  quarterly
+  yearly
 }
