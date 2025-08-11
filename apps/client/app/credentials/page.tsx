@@ -66,7 +66,24 @@ export default function CredentialsPage() {
   const router = useRouter();
   const [selectedService, setSelectedService] = useState<ServiceType>("slack");
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
-  const [formData, setFormData] = useState<ServiceFormData>({});
+  const [formData, setFormData] = useState<ServiceFormData>({
+    workspaceUrl: "",
+    organization: "",
+    domain: "",
+    email: "",
+    instanceUrl: "",
+    accessKeyId: "",
+    region: "",
+    clientId: "",
+    clientSecret: "",
+    accessToken: "",
+    refreshToken: "",
+    botToken: "",
+    signingSecret: "",
+    personalAccessToken: "",
+    apiToken: "",
+    secretAccessKey: "",
+  });
   const [isDirty, setIsDirty] = useState(false);
   
   // Fetch all credentials for the company
@@ -94,6 +111,7 @@ export default function CredentialsPage() {
   useEffect(() => {
     if (selectedCredential) {
       const config = selectedCredential.config as ServiceFormData;
+      
       // Only populate non-sensitive fields from existing credentials
       // Never show masked/sensitive values in form inputs
       setFormData({
@@ -117,11 +135,28 @@ export default function CredentialsPage() {
         secretAccessKey: "",
       });
     } else {
-      // No existing credential - start with empty form
-      setFormData({});
+      // No existing credential - completely clear the form
+      setFormData({
+        workspaceUrl: "",
+        organization: "",
+        domain: "",
+        email: "",
+        instanceUrl: "",
+        accessKeyId: "",
+        region: "",
+        clientId: "",
+        clientSecret: "",
+        accessToken: "",
+        refreshToken: "",
+        botToken: "",
+        signingSecret: "",
+        personalAccessToken: "",
+        apiToken: "",
+        secretAccessKey: "",
+      });
     }
     setIsDirty(false);
-  }, [selectedCredential]);
+  }, [selectedCredential, selectedService]);
   
   const handleInputChange = (field: keyof ServiceFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
