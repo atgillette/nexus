@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { 
   AppLayout, 
   Input, 
@@ -18,156 +19,118 @@ import {
 } from "@nexus/ui";
 import { Plus, Trash2, ArrowLeft } from "lucide-react";
 import { api } from "@nexus/trpc/react";
-import type { 
-  DepartmentFormValues, 
-  ClientUserFormValues,
-  SolutionsEngineerFormValues 
+import { 
+  companyFormSchema,
+  defaultFormValues,
+  type CompanyFormValues 
 } from "../validation";
 
 export default function NewClientPage() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Form state
-  const [companyName, setCompanyName] = useState("");
-  const [companyUrl, setCompanyUrl] = useState("https://");
-  const [departments, setDepartments] = useState<DepartmentFormValues[]>([]);
-  const [newDepartment, setNewDepartment] = useState("");
-  const [users, setUsers] = useState<ClientUserFormValues[]>([]);
-  const [solutionsEngineers, setSolutionsEngineers] = useState<SolutionsEngineerFormValues[]>([]);
   
   // Fetch data
   const { data: profileData } = api.profile.getProfile.useQuery();
   const { data: seUsers } = api.users.getUsers.useQuery({ role: "se" });
 
+  // Initialize React Hook Form
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<CompanyFormValues>({
+    resolver: zodResolver(companyFormSchema) as ReturnType<typeof zodResolver>,
+    defaultValues: defaultFormValues,
+  });
+
+  // Field arrays for dynamic fields
+  const { fields: departmentFields, append: appendDepartment, remove: removeDepartment } = useFieldArray({
+    control,
+    name: "departments",
+  });
+
+  const { fields: userFields, append: appendUser, remove: removeUser } = useFieldArray({
+    control,
+    name: "users",
+  });
+
+  const { fields: seFields, append: appendSE, remove: removeSE } = useFieldArray({
+    control,
+    name: "solutionsEngineers",
+  });
+
+  // Watch SE selections to auto-populate emails
+  const watchSEs = watch("solutionsEngineers");
+
+  // Create company mutation
   const createCompanyMutation = api.companies.create.useMutation({
     onSuccess: () => {
       router.push("/clients");
     },
     onError: (error) => {
-      setIsSubmitting(false);
       alert(`Error creating client: ${error.message}`);
     },
   });
 
-  // Department management
-  const handleAddDepartment = () => {
-    if (newDepartment.trim()) {
-      setDepartments([...departments, { 
-        id: `temp-${Date.now()}`, 
-        name: newDepartment.trim() 
-      }]);
-      setNewDepartment("");
-    }
-  };
-
-  const handleRemoveDepartment = (index: number) => {
-    setDepartments(departments.filter((_, i) => i !== index));
-  };
-
-  // User management
-  const handleAddUser = () => {
-    setUsers([...users, {
-      id: `temp-${Date.now()}`,
-      name: "",
-      email: "",
-      phone: "",
-      departmentId: "",
-      emailNotifications: false,
-      smsNotifications: false,
-      billingAccess: false,
-      adminAccess: false,
-    }]);
-  };
-
-  const handleUpdateUser = (index: number, field: keyof ClientUserFormValues, value: string | boolean) => {
-    const updatedUsers = [...users];
-    updatedUsers[index] = { ...updatedUsers[index], [field]: value };
-    setUsers(updatedUsers);
-  };
-
-  const handleRemoveUser = (index: number) => {
-    setUsers(users.filter((_, i) => i !== index));
-  };
-
-  // Solutions Engineer management
-  const handleAddSolutionsEngineer = () => {
-    setSolutionsEngineers([...solutionsEngineers, {
-      userId: "",
-      email: "",
-    }]);
-  };
-
-  const handleUpdateSolutionsEngineer = (index: number, field: keyof SolutionsEngineerFormValues, value: string) => {
-    const updated = [...solutionsEngineers];
-    updated[index] = { ...updated[index], [field]: value };
-    
-    // If SE is selected, auto-fill email
-    if (field === "userId" && seUsers) {
-      const selectedSE = seUsers.find(se => se.id === value);
-      if (selectedSE) {
-        updated[index].email = selectedSE.email;
-      }
-    }
-    
-    setSolutionsEngineers(updated);
-  };
-
-  const handleRemoveSolutionsEngineer = (index: number) => {
-    setSolutionsEngineers(solutionsEngineers.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = () => {
-    if (!companyName.trim() || !companyUrl.trim() || companyUrl === "https://") {
-      alert("Please fill in all required fields");
-      return;
-    }
-
-    setIsSubmitting(true);
-    
+  // Form submission handler
+  const onSubmit = (data: CompanyFormValues) => {
     // Extract domain from URL
-    const domain = companyUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    const domain = data.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
     
     // Prepare departments data
-    const departmentsData = departments.map(dept => ({
-      name: dept.name,
-    }));
+    const departmentsData = data.departments.length > 0 
+      ? data.departments.map(dept => ({ name: dept.name }))
+      : undefined;
     
-    // Prepare users data with department names
-    const usersData = users.filter(user => user.name && user.email).map(user => {
-      const department = departments.find(d => d.id === user.departmentId);
-      // Split name into first and last name
-      const nameParts = user.name.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-      
-      return {
-        firstName,
-        lastName,
-        email: user.email,
-        phone: user.phone || undefined,
-        departmentName: department?.name || undefined,
-        emailNotifications: user.emailNotifications,
-        smsNotifications: user.smsNotifications,
-        billingAccess: user.billingAccess,
-        adminAccess: user.adminAccess,
-      };
-    });
+    // Prepare users data
+    const usersData = data.users.length > 0
+      ? data.users.map(user => {
+          const nameParts = user.name.trim().split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          const department = data.departments.find(d => d.id === user.departmentId);
+          
+          return {
+            firstName,
+            lastName,
+            email: user.email,
+            phone: user.phone || undefined,
+            departmentName: department?.name || undefined,
+            emailNotifications: user.emailNotifications,
+            smsNotifications: user.smsNotifications,
+            billingAccess: user.billingAccess,
+            adminAccess: user.adminAccess,
+          };
+        })
+      : undefined;
     
     // Prepare SE assignments data
-    const seData = solutionsEngineers.filter(se => se.userId).map((se, index) => ({
-      userId: se.userId,
-      isPrimary: index === 0, // First SE is primary
-    }));
+    const seData = data.solutionsEngineers.length > 0
+      ? data.solutionsEngineers.map((se, index) => ({
+          userId: se.userId,
+          isPrimary: index === 0, // First SE is primary
+        }))
+      : undefined;
     
     createCompanyMutation.mutate({
-      name: companyName,
+      name: data.name,
       domain: domain,
       industry: undefined,
-      departments: departmentsData.length > 0 ? departmentsData : undefined,
-      users: usersData.length > 0 ? usersData : undefined,
-      solutionsEngineers: seData.length > 0 ? seData : undefined,
+      departments: departmentsData,
+      users: usersData,
+      solutionsEngineers: seData,
     });
+  };
+
+  // Auto-populate SE email when SE is selected
+  const handleSEChange = (index: number, userId: string) => {
+    setValue(`solutionsEngineers.${index}.userId`, userId);
+    const selectedSE = seUsers?.find(se => se.id === userId);
+    if (selectedSE) {
+      setValue(`solutionsEngineers.${index}.email`, selectedSE.email);
+    }
   };
 
   return (
@@ -196,34 +159,38 @@ export default function NewClientPage() {
             <CardContent className="p-8">
               <h1 className="text-2xl font-semibold mb-8">Add New Client</h1>
               
-              <div className="space-y-8">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                 {/* Company Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="companyName">
+                    <Label htmlFor="name">
                       Company Name<span className="text-destructive">*</span>
                     </Label>
                     <Input
-                      id="companyName"
+                      id="name"
                       type="text"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
+                      {...register("name")}
                       placeholder="Enter company name"
-                      className="mt-1"
+                      className={`mt-1 ${errors.name ? 'border-destructive' : ''}`}
                     />
+                    {errors.name && (
+                      <p className="text-sm text-destructive mt-1">{errors.name.message}</p>
+                    )}
                   </div>
                   <div>
-                    <Label htmlFor="companyUrl">
+                    <Label htmlFor="url">
                       Company URL<span className="text-destructive">*</span>
                     </Label>
                     <Input
-                      id="companyUrl"
+                      id="url"
                       type="text"
-                      value={companyUrl}
-                      onChange={(e) => setCompanyUrl(e.target.value)}
+                      {...register("url")}
                       placeholder="https://"
-                      className="mt-1"
+                      className={`mt-1 ${errors.url ? 'border-destructive' : ''}`}
                     />
+                    {errors.url && (
+                      <p className="text-sm text-destructive mt-1">{errors.url.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -231,46 +198,38 @@ export default function NewClientPage() {
                 <div>
                   <h2 className="text-lg font-semibold mb-4">Manage Departments</h2>
                   <div className="space-y-3">
-                    {departments.map((dept, index) => (
-                      <div key={dept.id} className="flex items-center gap-2">
+                    {departmentFields.map((field, index) => (
+                      <div key={field.id} className="flex items-center gap-2">
                         <Input
-                          value={dept.name}
-                          onChange={(e) => {
-                            const updated = [...departments];
-                            updated[index] = { ...dept, name: e.target.value };
-                            setDepartments(updated);
-                          }}
+                          {...register(`departments.${index}.name`)}
                           placeholder="Department name"
-                          className="flex-1"
+                          className={`flex-1 ${errors.departments?.[index]?.name ? 'border-destructive' : ''}`}
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleRemoveDepartment(index)}
+                          onClick={() => removeDepartment(index)}
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
+                        {errors.departments?.[index]?.name && (
+                          <p className="text-sm text-destructive">{errors.departments[index]?.name?.message}</p>
+                        )}
                       </div>
                     ))}
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={newDepartment}
-                        onChange={(e) => setNewDepartment(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleAddDepartment()}
-                        placeholder="Department name"
-                        className="flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleAddDepartment}
-                        className="whitespace-nowrap"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Department
-                      </Button>
-                    </div>
+                    {errors.departments?.message && (
+                      <p className="text-sm text-destructive">{errors.departments.message}</p>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => appendDepartment({ id: `temp-${Date.now()}`, name: "" })}
+                      className="whitespace-nowrap"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Department
+                    </Button>
                   </div>
                 </div>
 
@@ -291,73 +250,96 @@ export default function NewClientPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {users.map((user, index) => (
-                          <tr key={user.id} className="border-b">
+                        {userFields.map((field, index) => (
+                          <tr key={field.id} className="border-b">
                             <td className="py-3 pr-3">
-                              <Input
-                                value={user.name}
-                                onChange={(e) => handleUpdateUser(index, 'name', e.target.value)}
-                                placeholder="Full name"
-                                className="w-full min-w-[150px]"
-                              />
+                              <div>
+                                <Input
+                                  {...register(`users.${index}.name`)}
+                                  placeholder="First Last"
+                                  className={`w-full min-w-[150px] ${errors.users?.[index]?.name ? 'border-destructive' : ''}`}
+                                />
+                                {errors.users?.[index]?.name && (
+                                  <p className="text-xs text-destructive mt-1">{errors.users[index]?.name?.message}</p>
+                                )}
+                              </div>
                             </td>
                             <td className="py-3 pr-3">
-                              <Input
-                                type="email"
-                                value={user.email}
-                                onChange={(e) => handleUpdateUser(index, 'email', e.target.value)}
-                                placeholder="Email"
-                                className="w-full min-w-[150px]"
-                              />
+                              <div>
+                                <Input
+                                  type="email"
+                                  {...register(`users.${index}.email`)}
+                                  placeholder="email@example.com"
+                                  className={`w-full min-w-[150px] ${errors.users?.[index]?.email ? 'border-destructive' : ''}`}
+                                />
+                                {errors.users?.[index]?.email && (
+                                  <p className="text-xs text-destructive mt-1">{errors.users[index]?.email?.message}</p>
+                                )}
+                              </div>
                             </td>
                             <td className="py-3 pr-3">
-                              <Input
-                                value={user.phone || ""}
-                                onChange={(e) => handleUpdateUser(index, 'phone', e.target.value)}
-                                placeholder="Phone"
-                                className="w-full min-w-[120px]"
-                              />
+                              <div>
+                                <Input
+                                  {...register(`users.${index}.phone`)}
+                                  placeholder="(555) 555-5555"
+                                  className={`w-full min-w-[120px] ${errors.users?.[index]?.phone ? 'border-destructive' : ''}`}
+                                />
+                                {errors.users?.[index]?.phone && (
+                                  <p className="text-xs text-destructive mt-1">{errors.users[index]?.phone?.message}</p>
+                                )}
+                              </div>
                             </td>
                             <td className="py-3 pr-3">
-                              <Select
-                                value={user.departmentId}
-                                onValueChange={(value) => handleUpdateUser(index, 'departmentId', value)}
-                              >
-                                <SelectTrigger className="w-full min-w-[150px]">
-                                  <SelectValue placeholder="Select Department" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {departments.map((dept) => (
-                                    <SelectItem key={dept.id} value={dept.id || ""}>
-                                      {dept.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <Controller
+                                control={control}
+                                name={`users.${index}.departmentId`}
+                                render={({ field }) => (
+                                  <Select value={field.value} onValueChange={field.onChange}>
+                                    <SelectTrigger className="w-full min-w-[150px]">
+                                      <SelectValue placeholder="Select Department" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {departmentFields.map((dept) => (
+                                        <SelectItem key={dept.id} value={dept.id || ""}>
+                                          {watch(`departments.${departmentFields.indexOf(dept)}.name`) || "Unnamed"}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
                             </td>
                             <td className="py-3 pr-3">
                               <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2">
-                                  <Checkbox
-                                    id={`email-${user.id}`}
-                                    checked={user.emailNotifications}
-                                    onCheckedChange={(checked) => 
-                                      handleUpdateUser(index, 'emailNotifications', checked)
-                                    }
+                                  <Controller
+                                    control={control}
+                                    name={`users.${index}.emailNotifications`}
+                                    render={({ field }) => (
+                                      <Checkbox
+                                        id={`email-${field.name}`}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    )}
                                   />
-                                  <Label htmlFor={`email-${user.id}`} className="text-sm">
+                                  <Label htmlFor={`email-users.${index}.emailNotifications`} className="text-sm">
                                     Email
                                   </Label>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Checkbox
-                                    id={`sms-${user.id}`}
-                                    checked={user.smsNotifications}
-                                    onCheckedChange={(checked) => 
-                                      handleUpdateUser(index, 'smsNotifications', checked)
-                                    }
+                                  <Controller
+                                    control={control}
+                                    name={`users.${index}.smsNotifications`}
+                                    render={({ field }) => (
+                                      <Checkbox
+                                        id={`sms-${field.name}`}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    )}
                                   />
-                                  <Label htmlFor={`sms-${user.id}`} className="text-sm">
+                                  <Label htmlFor={`sms-users.${index}.smsNotifications`} className="text-sm">
                                     SMS
                                   </Label>
                                 </div>
@@ -366,26 +348,34 @@ export default function NewClientPage() {
                             <td className="py-3 pr-3">
                               <div className="flex flex-col gap-2">
                                 <div className="flex items-center gap-2">
-                                  <Checkbox
-                                    id={`billing-${user.id}`}
-                                    checked={user.billingAccess}
-                                    onCheckedChange={(checked) => 
-                                      handleUpdateUser(index, 'billingAccess', checked)
-                                    }
+                                  <Controller
+                                    control={control}
+                                    name={`users.${index}.billingAccess`}
+                                    render={({ field }) => (
+                                      <Checkbox
+                                        id={`billing-${field.name}`}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    )}
                                   />
-                                  <Label htmlFor={`billing-${user.id}`} className="text-sm whitespace-nowrap">
+                                  <Label htmlFor={`billing-users.${index}.billingAccess`} className="text-sm whitespace-nowrap">
                                     Billing Access
                                   </Label>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Checkbox
-                                    id={`admin-${user.id}`}
-                                    checked={user.adminAccess}
-                                    onCheckedChange={(checked) => 
-                                      handleUpdateUser(index, 'adminAccess', checked)
-                                    }
+                                  <Controller
+                                    control={control}
+                                    name={`users.${index}.adminAccess`}
+                                    render={({ field }) => (
+                                      <Checkbox
+                                        id={`admin-${field.name}`}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    )}
                                   />
-                                  <Label htmlFor={`admin-${user.id}`} className="text-sm whitespace-nowrap">
+                                  <Label htmlFor={`admin-users.${index}.adminAccess`} className="text-sm whitespace-nowrap">
                                     Admin Access
                                   </Label>
                                 </div>
@@ -396,7 +386,7 @@ export default function NewClientPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleRemoveUser(index)}
+                                onClick={() => removeUser(index)}
                               >
                                 <Trash2 className="w-4 h-4 text-destructive" />
                               </Button>
@@ -406,10 +396,23 @@ export default function NewClientPage() {
                       </tbody>
                     </table>
                   </div>
+                  {errors.users?.message && (
+                    <p className="text-sm text-destructive mt-2">{errors.users.message}</p>
+                  )}
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={handleAddUser}
+                    onClick={() => appendUser({
+                      id: `temp-${Date.now()}`,
+                      name: "",
+                      email: "",
+                      phone: "",
+                      departmentId: "",
+                      emailNotifications: false,
+                      smsNotifications: false,
+                      billingAccess: false,
+                      adminAccess: false,
+                    })}
                     className="mt-4"
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -421,50 +424,58 @@ export default function NewClientPage() {
                 <div>
                   <h2 className="text-lg font-semibold mb-4">Assign Solutions Engineers</h2>
                   <div className="space-y-3">
-                    {solutionsEngineers.map((se, index) => (
-                      <div key={index} className="flex items-center gap-3">
+                    {seFields.map((field, index) => (
+                      <div key={field.id} className="flex items-center gap-3">
                         <div className="flex-1">
                           <Label className="sr-only">Name</Label>
-                          <Select
-                            value={se.userId}
-                            onValueChange={(value) => handleUpdateSolutionsEngineer(index, 'userId', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select SE" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {seUsers?.map((user) => (
-                                <SelectItem key={user.id} value={user.id}>
-                                  {user.firstName} {user.lastName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Controller
+                            control={control}
+                            name={`solutionsEngineers.${index}.userId`}
+                            render={({ field }) => (
+                              <Select 
+                                value={field.value} 
+                                onValueChange={(value) => handleSEChange(index, value)}
+                              >
+                                <SelectTrigger className={errors.solutionsEngineers?.[index]?.userId ? 'border-destructive' : ''}>
+                                  <SelectValue placeholder="Select SE" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {seUsers?.map((user) => (
+                                    <SelectItem key={user.id} value={user.id}>
+                                      {user.firstName} {user.lastName}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                          {errors.solutionsEngineers?.[index]?.userId && (
+                            <p className="text-xs text-destructive mt-1">{errors.solutionsEngineers[index]?.userId?.message}</p>
+                          )}
                         </div>
                         <div className="flex-1">
                           <Label className="sr-only">Email</Label>
-                          <Input
-                            type="email"
-                            value={se.email}
-                            onChange={(e) => handleUpdateSolutionsEngineer(index, 'email', e.target.value)}
-                            placeholder="email@example.com"
-                            readOnly={!!se.userId}
-                          />
+                          <div className="px-3 py-2 text-muted-foreground">
+                            {watchSEs?.[index]?.email || "Select an SE to see email"}
+                          </div>
                         </div>
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleRemoveSolutionsEngineer(index)}
+                          onClick={() => removeSE(index)}
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </div>
                     ))}
+                    {errors.solutionsEngineers?.message && (
+                      <p className="text-sm text-destructive">{errors.solutionsEngineers.message}</p>
+                    )}
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={handleAddSolutionsEngineer}
+                      onClick={() => appendSE({ userId: "", email: "" })}
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Add Solutions Engineer
@@ -483,13 +494,13 @@ export default function NewClientPage() {
                     Cancel
                   </Button>
                   <Button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
+                    type="submit"
+                    disabled={isSubmitting || createCompanyMutation.isPending}
                   >
-                    {isSubmitting ? "Creating..." : "Create Client"}
+                    {isSubmitting || createCompanyMutation.isPending ? "Creating..." : "Create Client"}
                   </Button>
                 </div>
-              </div>
+              </form>
             </CardContent>
           </Card>
         </div>

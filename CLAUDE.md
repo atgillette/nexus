@@ -160,3 +160,4 @@ Required environment variables:
 - Verify TypeScript config paths
 - Before git commit, run ESLint and fix errors
 - Do not allow Typescript any
+- Always use react-hook-form and zod for form validation
