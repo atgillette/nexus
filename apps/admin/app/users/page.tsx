@@ -11,7 +11,8 @@ import {
   DeleteUserDialog,
   UserTabs,
 } from "./components";
-import type { User, UserRole, UserFormData } from "./types";
+import type { User, UserRole } from "./types";
+import type { UserFormValues } from "./validation";
 
 export default function UsersPage() {
   const [activeTab, setActiveTab] = useState<UserRole>("admin");
@@ -19,16 +20,6 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const [formData, setFormData] = useState<UserFormData>({
-    email: "",
-    firstName: "",
-    lastName: "",
-    role: "se",
-    phone: "",
-    costRate: "",
-    billRate: "",
-    companyAssignments: [],
-  });
 
   const router = useRouter();
 
@@ -68,32 +59,11 @@ export default function UsersPage() {
   // Handler functions
   const openAddUserModal = () => {
     setEditingUser(null);
-    setFormData({
-      email: "",
-      firstName: "",
-      lastName: "",
-      role: activeTab,
-      phone: "",
-      costRate: "",
-      billRate: "",
-      companyAssignments: [],
-    });
     setIsModalOpen(true);
   };
 
   const openEditUserModal = (user: User) => {
     setEditingUser(user);
-    const role = user.role === "admin" || user.role === "se" ? user.role : "se";
-    setFormData({
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role,
-      phone: user.phone || "",
-      costRate: user.costRate?.toString() || "",
-      billRate: user.billRate?.toString() || "",
-      companyAssignments: user.companyAssignments.map((c) => c.companyId),
-    });
     setIsModalOpen(true);
   };
 
@@ -107,14 +77,12 @@ export default function UsersPage() {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = (data: UserFormValues) => {
     const submitData = {
-      ...formData,
-      costRate: formData.costRate ? parseFloat(formData.costRate) : undefined,
-      billRate: formData.billRate ? parseFloat(formData.billRate) : undefined,
-      phone: formData.phone || undefined,
+      ...data,
+      costRate: data.costRate ? parseFloat(data.costRate) : undefined,
+      billRate: data.billRate ? parseFloat(data.billRate) : undefined,
+      phone: data.phone || undefined,
     };
 
     if (editingUser) {
@@ -228,8 +196,6 @@ export default function UsersPage() {
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}
         editingUser={editingUser}
-        formData={formData}
-        onFormDataChange={setFormData}
         companies={companies}
         onSubmit={handleSubmit}
         isSubmitting={

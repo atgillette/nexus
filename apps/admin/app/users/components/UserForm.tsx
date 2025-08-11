@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
   DialogContent,
@@ -15,16 +18,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@nexus/ui";
-import type { User, UserFormData, Company } from "../types";
+import type { User, Company } from "../types";
+import {
+  userFormSchemaWithRefinements,
+  type UserFormValues,
+} from "../validation";
 
 interface UserFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   editingUser: User | null;
-  formData: UserFormData;
-  onFormDataChange: (data: UserFormData) => void;
   companies: Company[] | undefined;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (data: UserFormValues) => void;
   isSubmitting: boolean;
 }
 
@@ -32,77 +37,154 @@ export function UserForm({
   isOpen,
   onOpenChange,
   editingUser,
-  formData,
-  onFormDataChange,
   companies,
   onSubmit,
   isSubmitting,
 }: UserFormProps) {
-  const handleInputChange = (field: keyof UserFormData, value: string) => {
-    onFormDataChange({ ...formData, [field]: value });
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+    reset,
+  } = useForm<UserFormValues>({
+    resolver: zodResolver(userFormSchemaWithRefinements),
+    defaultValues: {
+      email: "",
+      firstName: "",
+      lastName: "",
+      role: "se",
+      phone: "",
+      costRate: "",
+      billRate: "",
+      companyAssignments: [],
+    },
+  });
+
+  // Watch for company assignments
+  const watchedCompanyAssignments = watch("companyAssignments");
+
+  // Reset form when modal opens/closes or user changes
+  useEffect(() => {
+    if (isOpen) {
+      if (editingUser) {
+        const role = editingUser.role === "admin" || editingUser.role === "se" 
+          ? editingUser.role 
+          : "se";
+        reset({
+          email: editingUser.email,
+          firstName: editingUser.firstName,
+          lastName: editingUser.lastName,
+          role,
+          phone: editingUser.phone || "",
+          costRate: editingUser.costRate?.toString() || "",
+          billRate: editingUser.billRate?.toString() || "",
+          companyAssignments: editingUser.companyAssignments.map(
+            (c) => c.companyId
+          ),
+        });
+      } else {
+        reset({
+          email: "",
+          firstName: "",
+          lastName: "",
+          role: "se",
+          phone: "",
+          costRate: "",
+          billRate: "",
+          companyAssignments: [],
+        });
+      }
+    }
+  }, [isOpen, editingUser, reset]);
 
   const handleCompanyAssignmentChange = (
     companyId: string,
     checked: boolean
   ) => {
+    const currentAssignments = watchedCompanyAssignments || [];
     const updatedAssignments = checked
-      ? [...formData.companyAssignments, companyId]
-      : formData.companyAssignments.filter((id) => id !== companyId);
-    onFormDataChange({ ...formData, companyAssignments: updatedAssignments });
+      ? [...currentAssignments, companyId]
+      : currentAssignments.filter((id) => id !== companyId);
+    setValue("companyAssignments", updatedAssignments);
+  };
+
+  const onFormSubmit = (data: UserFormValues) => {
+    onSubmit(data);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {editingUser ? "Edit User" : "Add New User"}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName">
+                First Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="firstName"
                 type="text"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange("firstName", e.target.value)}
-                required
+                {...register("firstName")}
+                aria-invalid={!!errors.firstName}
               />
+              {errors.firstName && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.firstName.message}
+                </p>
+              )}
             </div>
             <div>
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName">
+                Last Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="lastName"
                 type="text"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange("lastName", e.target.value)}
-                required
+                {...register("lastName")}
+                aria-invalid={!!errors.lastName}
               />
+              {errors.lastName && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.lastName.message}
+                </p>
+              )}
             </div>
           </div>
 
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">
+              Email <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="email"
               type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange("email", e.target.value)}
-              required
+              {...register("email")}
+              aria-invalid={!!errors.email}
             />
+            {errors.email && (
+              <p className="text-sm text-destructive mt-1">
+                {errors.email.message}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">
+                Role <span className="text-destructive">*</span>
+              </Label>
               <Select
-                value={formData.role}
-                onValueChange={(value) => handleInputChange("role", value)}
+                value={watch("role")}
+                onValueChange={(value) => setValue("role", value as "admin" | "se")}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-invalid={!!errors.role}>
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -110,16 +192,26 @@ export function UserForm({
                   <SelectItem value="se">Sales Engineer</SelectItem>
                 </SelectContent>
               </Select>
+              {errors.role && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.role.message}
+                </p>
+              )}
             </div>
             <div>
               <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
                 type="tel"
-                value={formData.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
+                {...register("phone")}
                 placeholder="+1 234 567 8900"
+                aria-invalid={!!errors.phone}
               />
+              {errors.phone && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.phone.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -130,10 +222,15 @@ export function UserForm({
                 id="costRate"
                 type="number"
                 step="0.01"
-                value={formData.costRate}
-                onChange={(e) => handleInputChange("costRate", e.target.value)}
+                {...register("costRate")}
                 placeholder="75.00"
+                aria-invalid={!!errors.costRate}
               />
+              {errors.costRate && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.costRate.message}
+                </p>
+              )}
             </div>
             <div>
               <Label htmlFor="billRate">Bill Rate ($/hr)</Label>
@@ -141,32 +238,46 @@ export function UserForm({
                 id="billRate"
                 type="number"
                 step="0.01"
-                value={formData.billRate}
-                onChange={(e) => handleInputChange("billRate", e.target.value)}
+                {...register("billRate")}
                 placeholder="150.00"
+                aria-invalid={!!errors.billRate}
               />
+              {errors.billRate && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.billRate.message}
+                </p>
+              )}
             </div>
           </div>
 
           <div>
             <Label>Assigned Companies</Label>
-            <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
-              {companies?.map((company) => (
-                <label key={company.id} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.companyAssignments.includes(company.id)}
-                    onChange={(e) =>
-                      handleCompanyAssignmentChange(
-                        company.id,
-                        e.target.checked
-                      )
-                    }
-                    className="mr-2"
-                  />
-                  {company.name}
-                </label>
-              ))}
+            <div className="mt-2 space-y-2 max-h-32 overflow-y-auto border rounded-md p-3">
+              {companies && companies.length > 0 ? (
+                companies.map((company) => (
+                  <label
+                    key={company.id}
+                    className="flex items-center cursor-pointer hover:bg-accent p-1 rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={watchedCompanyAssignments?.includes(company.id) || false}
+                      onChange={(e) =>
+                        handleCompanyAssignmentChange(
+                          company.id,
+                          e.target.checked
+                        )
+                      }
+                      className="mr-2 cursor-pointer"
+                    />
+                    <span className="text-sm">{company.name}</span>
+                  </label>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No companies available
+                </p>
+              )}
             </div>
           </div>
         </form>
@@ -179,7 +290,11 @@ export function UserForm({
           >
             Cancel
           </Button>
-          <Button type="submit" onClick={onSubmit} disabled={isSubmitting}>
+          <Button
+            type="submit"
+            onClick={handleSubmit(onFormSubmit)}
+            disabled={isSubmitting}
+          >
             {isSubmitting
               ? "Saving..."
               : editingUser
