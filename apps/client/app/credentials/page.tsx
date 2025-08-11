@@ -11,11 +11,12 @@ import {
   FaSalesforce, 
   FaAws 
 } from "react-icons/fa";
+import type { IconType } from "react-icons";
 import { api } from "@/trpc/react";
 import { ServiceType } from "@prisma/client";
 import { toast } from "sonner";
 
-const serviceIcons = {
+const serviceIcons: Record<ServiceType, IconType> = {
   slack: FaSlack,
   github: FaGithub,
   jira: FaJira,
@@ -23,7 +24,7 @@ const serviceIcons = {
   aws: FaAws,
 };
 
-const serviceLabels = {
+const serviceLabels: Record<ServiceType, string> = {
   slack: "Slack",
   github: "GitHub",
   jira: "Jira",
@@ -68,19 +69,19 @@ export default function CredentialsPage() {
   const [formData, setFormData] = useState<ServiceFormData>({});
   const [isDirty, setIsDirty] = useState(false);
   
-  // TODO: Get actual company ID from context/session
-  // For now, using a placeholder. In production, this would come from auth context
-  const companyId = "acme-corp-id";
+  // First, get the current user's company
+  const { data: dashboardData } = api.dashboard.getClientDashboard.useQuery();
+  const companyId = dashboardData?.company?.id;
   
   // Fetch all credentials for the company
   const { data: credentials, refetch } = api.credentials.getByCompany.useQuery(
-    { companyId },
+    { companyId: companyId || "" },
     { enabled: !!companyId }
   );
   
   // Fetch specific credential when service is selected
   const { data: selectedCredential } = api.credentials.getByService.useQuery(
-    { companyId, service: selectedService },
+    { companyId: companyId || "", service: selectedService },
     { enabled: !!companyId && !!selectedService }
   );
   
@@ -123,6 +124,11 @@ export default function CredentialsPage() {
   };
   
   const handleSave = () => {
+    if (!companyId) {
+      toast.error("Company ID not found. Please refresh the page.");
+      return;
+    }
+    
     saveMutation.mutate({
       companyId,
       service: selectedService,
@@ -133,7 +139,7 @@ export default function CredentialsPage() {
   };
   
   const isServiceConnected = (service: ServiceType) => {
-    return credentials?.some((c: { service: ServiceType; isConnected: boolean }) => c.service === service && c.isConnected);
+    return credentials?.some((c) => c.service === service && c.isConnected);
   };
   
   const renderServiceForm = () => {
@@ -403,6 +409,32 @@ export default function CredentialsPage() {
     }
   };
   
+  // Show loading state while fetching company data
+  if (!dashboardData) {
+    return (
+      <AppLayout
+        title="Credentials"
+        activeNavItem="credentials"
+        userRole="client"
+        onNavigate={(href) => router.push(href)}
+        onProfileClick={() => router.push('/profile')}
+        onNotificationsClick={() => console.log('Notifications clicked')}
+        onLogoutClick={() => router.push('/auth/logout')}
+      >
+        <div className="pt-16">
+          <div className="p-6">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-2 text-muted-foreground">Loading credentials...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+  
   return (
     <AppLayout
       title="Credentials"
@@ -484,7 +516,7 @@ export default function CredentialsPage() {
                   <div className="mt-6">
                     <Button 
                       onClick={handleSave}
-                      disabled={!isDirty || saveMutation.isPending}
+                      disabled={!isDirty || saveMutation.isPending || !companyId}
                       className="w-full sm:w-auto"
                     >
                       {saveMutation.isPending ? "Saving..." : "Save Changes"}
