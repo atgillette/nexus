@@ -32,8 +32,8 @@ export function TimeFilter({ selectedFilter, onFilterChange }: TimeFilterProps) 
           className={cn(
             'px-4 py-2 text-sm rounded-md transition-colors',
             selectedFilter === filter.value
-              ? 'bg-gray-900 text-white dark:bg-gray-700'
-              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-background text-foreground border border-border hover:bg-accent hover:text-accent-foreground'
           )}
         >
           {filter.label}

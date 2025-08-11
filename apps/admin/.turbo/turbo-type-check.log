@@ -2,8 +2,6 @@
 > @nexus/admin@0.1.0 type-check
 > tsc --noEmit
 
-app/auth/login/__tests__/actions.test.ts(30,40): error TS2352: Conversion of type '{ auth: { signInWithPassword: jest.Mock<any, any, any>; signOut: jest.Mock<any, any, any>; }; from: jest.Mock<any, any, any>; }' to type 'Promise<SupabaseClient<any, "public", any>>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
-  Type '{ auth: { signInWithPassword: Mock<any, any, any>; signOut: Mock<any, any, any>; }; from: Mock<any, any, any>; }' is missing the following properties from type 'Promise<SupabaseClient<any, "public", any>>': then, catch, finally, [Symbol.toStringTag]
 app/auth/login/__tests__/page.test.tsx(37,46): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
 app/auth/login/__tests__/page.test.tsx(38,71): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
 app/auth/login/__tests__/page.test.tsx(39,52): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
@@ -20,7 +18,6 @@ app/auth/login/__tests__/page.test.tsx(68,24): error TS2339: Property 'toHaveAtt
 app/auth/login/__tests__/page.test.tsx(70,27): error TS2339: Property 'toHaveAttribute' does not exist on type 'JestMatchers<HTMLElement>'.
 app/auth/login/__tests__/page.test.tsx(71,27): error TS2339: Property 'toHaveAttribute' does not exist on type 'JestMatchers<HTMLElement>'.
 app/auth/login/__tests__/page.test.tsx(72,27): error TS2339: Property 'toHaveAttribute' does not exist on type 'JestMatchers<HTMLElement>'.
-app/auth/login/__tests__/page.test.tsx(77,40): error TS2345: Argument of type 'undefined' is not assignable to parameter of type '{ error: string; } | Promise<{ error: string; }>'.
 app/auth/login/__tests__/page.test.tsx(112,49): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
 app/auth/login/__tests__/page.test.tsx(113,45): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
 app/auth/login/__tests__/page.test.tsx(114,28): error TS2339: Property 'toBeDisabled' does not exist on type 'JestMatchers<HTMLElement>'.
@@ -29,7 +26,6 @@ app/auth/login/__tests__/page.test.tsx(137,48): error TS2339: Property 'toBeInTh
 app/auth/login/__tests__/page.test.tsx(138,52): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
 app/auth/login/__tests__/page.test.tsx(142,32): error TS2339: Property 'toBeDisabled' does not exist on type 'Matchers<void, HTMLElement>'.
 app/auth/login/__tests__/page.test.tsx(160,57): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
-app/auth/login/__tests__/page.test.tsx(164,44): error TS2345: Argument of type 'undefined' is not assignable to parameter of type '{ error: string; } | Promise<{ error: string; }>'.
 app/auth/login/__tests__/page.test.tsx(173,61): error TS2339: Property 'toBeInTheDocument' does not exist on type 'Matchers<void, HTMLElement | null>'.
 app/auth/login/__tests__/page.test.tsx(201,72): error TS2339: Property 'toBeInTheDocument' does not exist on type 'Matchers<void, HTMLElement | null>'.
 app/auth/login/__tests__/page.test.tsx(220,66): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
@@ -38,6 +34,12 @@ app/auth/login/__tests__/page.test.tsx(234,26): error TS2339: Property 'toHaveAc
 app/auth/login/__tests__/page.test.tsx(235,29): error TS2339: Property 'toHaveAccessibleName' does not exist on type 'JestMatchers<HTMLElement>'.
 app/auth/login/__tests__/page.test.tsx(253,30): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
 app/auth/login/__tests__/page.test.tsx(254,30): error TS2339: Property 'toHaveClass' does not exist on type 'JestMatchers<HTMLElement>'.
+app/users/page.tsx(298,31): error TS2345: Argument of type '(user: User) => JSX.Element' is not assignable to parameter of type '(value: { id: string; email: string; firstName: string; lastName: string; role: UserRole; phone: string | null; costRate: number | null; billRate: number | null; avatarUrl: string | null; isActive: boolean; createdAt: Date; assignedClients: string[]; companyAssignments: { ...; }[]; }, index: number, array: { ...; }[...'.
+  Types of parameters 'user' and 'value' are incompatible.
+    Type '{ id: string; email: string; firstName: string; lastName: string; role: $Enums.UserRole; phone: string | null; costRate: number | null; billRate: number | null; avatarUrl: string | null; isActive: boolean; createdAt: Date; assignedClients: string[]; companyAssignments: { ...; }[]; }' is not assignable to type 'User'.
+      Types of property 'role' are incompatible.
+        Type 'import("/Users/adriangillette/Documents/consulting/Braintrust/nexus/node_modules/.prisma/client/index").$Enums.UserRole' is not assignable to type 'UserRole'.
+          Type '"client"' is not assignable to type 'UserRole'.
 npm ERR! Lifecycle script `type-check` failed with error: 
 npm ERR! Error: command failed 
 npm ERR!   in workspace: @nexus/admin@0.1.0 

@@ -31,8 +31,8 @@ export default function AdminDashboard() {
       <AppLayout title="Dashboard Overview" activeNavItem="dashboard">
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading dashboard...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Loading dashboard...</p>
           </div>
         </div>
       </AppLayout>
@@ -44,7 +44,7 @@ export default function AdminDashboard() {
       <AppLayout title="Dashboard Overview" activeNavItem="dashboard">
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600">Error loading dashboard: {error.message}</p>
+            <p className="text-destructive">Error loading dashboard: {error.message}</p>
             {error.data?.code === 'UNAUTHORIZED' && (
               <p className="mt-2">
                 <a href="/auth/login" className="text-blue-600 hover:underline">
@@ -53,7 +53,7 @@ export default function AdminDashboard() {
               </p>
             )}
             {error.data?.code === 'FORBIDDEN' && (
-              <p className="mt-2 text-sm text-gray-600">Admin access required</p>
+              <p className="mt-2 text-sm text-muted-foreground">Admin access required</p>
             )}
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
       <AppLayout title="Dashboard Overview" activeNavItem="dashboard">
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <p className="text-gray-600">No data available</p>
+            <p className="text-muted-foreground">No data available</p>
           </div>
         </div>
       </AppLayout>
@@ -101,9 +101,9 @@ export default function AdminDashboard() {
             ) : (
               // Show actual data
               <>
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+            <div className="bg-card rounded-lg border border-border p-5">
               <div className="mb-2">
-                <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                <p className="text-sm text-muted-foreground flex items-center">
                   Total Workflows
                   <span className="ml-2 flex items-center text-green-500">
                     <ArrowUp className="h-3 w-3 mr-1" />
@@ -113,11 +113,11 @@ export default function AdminDashboard() {
               </div>
               <h3 className="text-2xl font-semibold">{data.metrics.activeWorkflows.toLocaleString()}</h3>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+            <div className="bg-card rounded-lg border border-border p-5">
               <div className="mb-2">
-                <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                <p className="text-sm text-muted-foreground flex items-center">
                   Total Exceptions
-                  <span className="ml-2 flex items-center text-red-500">
+                  <span className="ml-2 flex items-center text-destructive">
                     <ArrowDown className="h-3 w-3 mr-1" />
                     -8%
                   </span>
@@ -125,9 +125,9 @@ export default function AdminDashboard() {
               </div>
               <h3 className="text-2xl font-semibold">{Math.floor(data.metrics.totalExecutions * 0.13)}</h3>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+            <div className="bg-card rounded-lg border border-border p-5">
               <div className="mb-2">
-                <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                <p className="text-sm text-muted-foreground flex items-center">
                   Time Saved
                   <span className="ml-2 flex items-center text-green-500">
                     <ArrowUp className="h-3 w-3 mr-1" />
@@ -137,9 +137,9 @@ export default function AdminDashboard() {
               </div>
               <h3 className="text-2xl font-semibold">{data.metrics.timeSaved || 0}h</h3>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+            <div className="bg-card rounded-lg border border-border p-5">
               <div className="mb-2">
-                <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                <p className="text-sm text-muted-foreground flex items-center">
                   Revenue
                   <span className="ml-2 flex items-center text-green-500">
                     <ArrowUp className="h-3 w-3 mr-1" />
@@ -149,9 +149,9 @@ export default function AdminDashboard() {
               </div>
               <h3 className="text-2xl font-semibold">{formatRevenue(data.metrics.monthlyRevenue)}</h3>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+            <div className="bg-card rounded-lg border border-border p-5">
               <div className="mb-2">
-                <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                <p className="text-sm text-muted-foreground flex items-center">
                   Active Clients
                   <span className="ml-2 flex items-center text-green-500">
                     <ArrowUp className="h-3 w-3 mr-1" />
@@ -168,10 +168,10 @@ export default function AdminDashboard() {
           {isFetching && !isLoading ? (
             <TableSkeleton />
           ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="flex justify-between items-center p-5 border-b border-gray-200 dark:border-gray-700">
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
+            <div className="flex justify-between items-center p-5 border-b border-border">
               <h2 className="text-lg font-semibold">All Clients</h2>
-              <button className="px-4 py-2 bg-gray-900 text-white rounded-md flex items-center text-sm">
+              <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md flex items-center text-sm">
                 <svg
                   className="w-4 h-4 mr-2"
                   fill="none"
@@ -191,8 +191,8 @@ export default function AdminDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="text-left text-xs border-b border-gray-200 dark:border-gray-700">
-                    <th className="px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">
+                  <tr className="text-left text-xs border-b border-border">
+                    <th className="px-5 py-3 text-muted-foreground font-medium">
                       <div className="flex items-center">
                         Client Name
                         <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,7 +200,7 @@ export default function AdminDashboard() {
                         </svg>
                       </div>
                     </th>
-                    <th className="px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">
+                    <th className="px-5 py-3 text-muted-foreground font-medium">
                       <div className="flex items-center">
                         Contract Start
                         <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,7 +208,7 @@ export default function AdminDashboard() {
                         </svg>
                       </div>
                     </th>
-                    <th className="px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">
+                    <th className="px-5 py-3 text-muted-foreground font-medium">
                       <div className="flex items-center">
                         Workflows
                         <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,7 +216,7 @@ export default function AdminDashboard() {
                         </svg>
                       </div>
                     </th>
-                    <th className="px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">
+                    <th className="px-5 py-3 text-muted-foreground font-medium">
                       <div className="flex items-center">
                         Nodes
                         <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,7 +224,7 @@ export default function AdminDashboard() {
                         </svg>
                       </div>
                     </th>
-                    <th className="px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">
+                    <th className="px-5 py-3 text-muted-foreground font-medium">
                       <div className="flex items-center">
                         Executions
                         <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,7 +232,7 @@ export default function AdminDashboard() {
                         </svg>
                       </div>
                     </th>
-                    <th className="px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">
+                    <th className="px-5 py-3 text-muted-foreground font-medium">
                       <div className="flex items-center">
                         Exceptions
                         <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,7 +240,7 @@ export default function AdminDashboard() {
                         </svg>
                       </div>
                     </th>
-                    <th className="px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">
+                    <th className="px-5 py-3 text-muted-foreground font-medium">
                       <div className="flex items-center">
                         Revenue
                         <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -248,7 +248,7 @@ export default function AdminDashboard() {
                         </svg>
                       </div>
                     </th>
-                    <th className="px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">
+                    <th className="px-5 py-3 text-muted-foreground font-medium">
                       <div className="flex items-center">
                         Time Saved
                         <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,7 +256,7 @@ export default function AdminDashboard() {
                         </svg>
                       </div>
                     </th>
-                    <th className="px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">
+                    <th className="px-5 py-3 text-muted-foreground font-medium">
                       <div className="flex items-center">
                         Money Saved
                         <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,33 +280,33 @@ export default function AdminDashboard() {
                     return (
                       <tr
                         key={index}
-                        className="border-b border-gray-200 dark:border-gray-700 last:border-0"
+                        className="border-b border-border last:border-0"
                       >
                         <td className="px-5 py-4 text-blue-600 dark:text-blue-400">
                           {company.name}
                         </td>
-                        <td className="px-5 py-4 text-gray-800 dark:text-gray-200">
+                        <td className="px-5 py-4 text-foreground">
                           {new Date(company.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </td>
-                        <td className="px-5 py-4 text-gray-800 dark:text-gray-200">
+                        <td className="px-5 py-4 text-foreground">
                           {workflows}
                         </td>
-                        <td className="px-5 py-4 text-gray-800 dark:text-gray-200">
+                        <td className="px-5 py-4 text-foreground">
                           {nodes}
                         </td>
-                        <td className="px-5 py-4 text-gray-800 dark:text-gray-200">
+                        <td className="px-5 py-4 text-foreground">
                           {executions.toLocaleString()}
                         </td>
-                        <td className="px-5 py-4 text-gray-800 dark:text-gray-200">
+                        <td className="px-5 py-4 text-foreground">
                           {exceptions}
                         </td>
-                        <td className="px-5 py-4 text-gray-800 dark:text-gray-200">
+                        <td className="px-5 py-4 text-foreground">
                           ${revenue.toLocaleString()}
                         </td>
-                        <td className="px-5 py-4 text-gray-800 dark:text-gray-200">
+                        <td className="px-5 py-4 text-foreground">
                           {timeSaved}h
                         </td>
-                        <td className="px-5 py-4 text-gray-800 dark:text-gray-200">
+                        <td className="px-5 py-4 text-foreground">
                           ${moneySaved.toLocaleString()}
                         </td>
                       </tr>

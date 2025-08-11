@@ -10,7 +10,7 @@ export function Skeleton({ className }: SkeletonProps) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-md bg-gray-200 dark:bg-gray-700",
+        "animate-pulse rounded-md bg-muted",
         className
       )}
     />
@@ -19,7 +19,7 @@ export function Skeleton({ className }: SkeletonProps) {
 
 export function MetricCardSkeleton() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+    <div className="bg-card rounded-lg border border-border p-5">
       <div className="mb-2">
         <div className="flex items-center">
           <Skeleton className="h-4 w-24" />
@@ -36,15 +36,15 @@ export function MetricCardSkeleton() {
 
 export function TableSkeleton() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <div className="flex justify-between items-center p-5 border-b border-gray-200 dark:border-gray-700">
+    <div className="bg-card rounded-lg border border-border overflow-hidden">
+      <div className="flex justify-between items-center p-5 border-b border-border">
         <Skeleton className="h-6 w-24" />
         <Skeleton className="h-10 w-28 rounded-md" />
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="text-left text-xs border-b border-gray-200 dark:border-gray-700">
+            <tr className="text-left text-xs border-b border-border">
               {Array.from({ length: 9 }).map((_, i) => (
                 <th key={i} className="px-5 py-3">
                   <Skeleton className="h-4 w-20" />
@@ -54,7 +54,7 @@ export function TableSkeleton() {
           </thead>
           <tbody>
             {Array.from({ length: 5 }).map((_, rowIndex) => (
-              <tr key={rowIndex} className="border-b border-gray-200 dark:border-gray-700 last:border-0">
+              <tr key={rowIndex} className="border-b border-border last:border-0">
                 {Array.from({ length: 9 }).map((_, colIndex) => (
                   <td key={colIndex} className="px-5 py-4">
                     <Skeleton className="h-4 w-16" />

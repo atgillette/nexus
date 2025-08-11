@@ -8,10 +8,10 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading profile...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading profile...</p>
         </div>
       </div>
     );
@@ -19,9 +19,9 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Profile not found</p>
+          <p className="text-muted-foreground">Profile not found</p>
         </div>
       </div>
     );
@@ -30,11 +30,11 @@ export default function ProfilePage() {
   const userInitials = `${profile.firstName[0]}${profile.lastName[0]}`;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow">
+      <header className="bg-card shadow">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-foreground">
             Profile Settings
           </h1>
         </div>
@@ -72,48 +72,48 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="text-sm font-medium text-muted-foreground">
                   Full Name
                 </label>
-                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                <p className="mt-1 text-sm text-foreground">
                   {profile.firstName} {profile.lastName}
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="text-sm font-medium text-muted-foreground">
                   Email Address
                 </label>
-                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                <p className="mt-1 text-sm text-foreground">
                   {profile.email}
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="text-sm font-medium text-muted-foreground">
                   Role
                 </label>
-                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100 capitalize">
+                <p className="mt-1 text-sm text-foreground capitalize">
                   {profile.role}
                 </p>
               </div>
 
               {profile.company && (
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="text-sm font-medium text-muted-foreground">
                     Company
                   </label>
-                  <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                  <p className="mt-1 text-sm text-foreground">
                     {profile.company.name}
                   </p>
                 </div>
               )}
 
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="text-sm font-medium text-muted-foreground">
                   Member Since
                 </label>
-                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                <p className="mt-1 text-sm text-foreground">
                   {new Date(profile.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',

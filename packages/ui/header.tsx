@@ -24,13 +24,13 @@ export function Header({
   onNotificationsClick,
 }: HeaderProps) {
   return (
-    <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-4 md:px-6">
+    <header className="h-16 bg-background border-b border-border fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-4 md:px-6">
       <div className="flex items-center space-x-4">
         <button
-          className="md:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+          className="md:hidden p-2 rounded-md hover:bg-accent"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
-          <Menu className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+          <Menu className="h-5 w-5 text-muted-foreground" />
         </button>
         <div className="flex items-center">
           <div className="h-8 w-8 mr-3 flex items-center justify-center">
@@ -42,17 +42,17 @@ export function Header({
               className="w-8 h-8 dark:invert"
             />
           </div>
-          <h1 className="text-xl font-semibold text-gray-800 dark:text-white hidden md:block ml-2">
+          <h1 className="text-xl font-semibold text-foreground hidden md:block ml-2">
             {title}
           </h1>
         </div>
       </div>
       <div className="flex items-center space-x-4">
         <button 
-          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+          className="p-2 rounded-full hover:bg-accent"
           onClick={onNotificationsClick}
         >
-          <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+          <Bell className="h-5 w-5 text-muted-foreground" />
         </button>
         <div className="flex items-center" onClick={onProfileClick}>
           <div className="h-8 w-8 rounded-full overflow-hidden">
@@ -73,7 +73,7 @@ export function Header({
             )}
           </div>
           <svg
-            className="h-4 w-4 ml-1 text-gray-500"
+            className="h-4 w-4 ml-1 text-muted-foreground"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"

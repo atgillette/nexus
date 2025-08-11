@@ -184,12 +184,12 @@ export function Sidebar({ open, setOpen, activeItem, onItemClick, userRole = 'ad
       {/* Mobile sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-30 w-64 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-200 ease-in-out md:hidden',
+          'fixed inset-y-0 left-0 z-30 w-64 bg-background border-r border-border transform transition-transform duration-200 ease-in-out md:hidden',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <div className="p-4 border-b border-border flex items-center justify-between">
             <div className="flex items-center">
               <div className="h-8 flex items-center justify-center">
                 <Image
@@ -203,10 +203,10 @@ export function Sidebar({ open, setOpen, activeItem, onItemClick, userRole = 'ad
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-2 rounded-md hover:bg-accent"
               aria-label="Close menu"
             >
-              <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+              <X className="h-5 w-5 text-muted-foreground" />
             </button>
           </div>
           <nav className="flex-1 py-4 overflow-y-auto">
@@ -222,8 +222,8 @@ export function Sidebar({ open, setOpen, activeItem, onItemClick, userRole = 'ad
                       className={cn(
                         'w-full flex items-center px-4 py-3 text-sm rounded-md',
                         isActive
-                          ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
-                          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                          ? 'bg-accent text-accent-foreground'
+                          : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                       )}
                     >
                       <Icon className="h-5 w-5 mr-3" />
@@ -234,7 +234,7 @@ export function Sidebar({ open, setOpen, activeItem, onItemClick, userRole = 'ad
               })}
             </ul>
           </nav>
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="p-4 border-t border-border">
             <button 
               onClick={toggleTheme}
               className="w-full flex items-center px-4 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -255,8 +255,8 @@ export function Sidebar({ open, setOpen, activeItem, onItemClick, userRole = 'ad
       </aside>
       
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 fixed left-0 top-0 bottom-0 z-10 flex-col">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+      <aside className="hidden md:flex w-64 bg-background border-r border-border fixed left-0 top-0 bottom-0 z-10 flex-col">
+        <div className="p-4 border-b border-border flex items-center justify-between">
           <div className="flex items-center">
             <div className="h-8 flex items-center justify-center">
               <Image
@@ -282,8 +282,8 @@ export function Sidebar({ open, setOpen, activeItem, onItemClick, userRole = 'ad
                     className={cn(
                       'w-full flex items-center px-4 py-3 text-sm rounded-md',
                       isActive
-                        ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
-                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                     )}
                   >
                     <Icon className="h-5 w-5 mr-3" />
@@ -294,7 +294,7 @@ export function Sidebar({ open, setOpen, activeItem, onItemClick, userRole = 'ad
             })}
           </ul>
         </nav>
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-t border-border">
           <button 
             onClick={toggleTheme}
             className="w-full flex items-center px-4 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"

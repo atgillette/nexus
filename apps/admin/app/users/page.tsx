@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { AppLayout, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, Input, Label } from "@nexus/ui";
+import { AppLayout, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, Input, Label, Badge, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@nexus/ui";
 import { Edit, Trash2, Plus } from "lucide-react";
 import { api } from "@nexus/trpc/react";
 
@@ -14,7 +14,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
+  role: 'admin' | 'se' | 'client';
   phone?: string | null;
   costRate?: number | null;
   billRate?: number | null;
@@ -32,7 +32,7 @@ interface UserFormData {
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
+  role: 'admin' | 'se';
   phone: string;
   costRate: string;
   billRate: string;
@@ -168,7 +168,7 @@ export default function UsersPage() {
       <AppLayout title="Access Denied" activeNavItem="users">
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600">Access denied. Admin privileges required.</p>
+            <p className="text-destructive">Access denied. Admin privileges required.</p>
           </div>
         </div>
       </AppLayout>
@@ -180,8 +180,8 @@ export default function UsersPage() {
       <AppLayout title="Manage Users" activeNavItem="users">
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading users...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Loading users...</p>
           </div>
         </div>
       </AppLayout>
@@ -193,10 +193,10 @@ export default function UsersPage() {
       <AppLayout title="Manage Users" activeNavItem="users">
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600">Error loading users: {error.message}</p>
+            <p className="text-destructive">Error loading users: {error.message}</p>
             <button 
               onClick={() => refetch()} 
-              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="mt-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
             >
               Retry
             </button>
@@ -232,7 +232,7 @@ export default function UsersPage() {
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-2xl font-semibold">Manage Users</h1>
             <button 
-              className="px-4 py-2 bg-gray-900 text-white rounded-md flex items-center text-sm hover:bg-gray-800"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md flex items-center text-sm hover:bg-primary/90"
               onClick={openAddUserModal}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -243,20 +243,20 @@ export default function UsersPage() {
           {/* Tabs */}
           <div className="flex space-x-2 mb-6">
             <button
-              className={`px-5 py-2 rounded-full text-sm font-medium ${
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
                 activeTab === 'admin'
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-foreground border border-border hover:bg-accent hover:text-accent-foreground'
               }`}
               onClick={() => setActiveTab('admin')}
             >
               Admin Users
             </button>
             <button
-              className={`px-5 py-2 rounded-full text-sm font-medium ${
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
                 activeTab === 'se'
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-foreground border border-border hover:bg-accent hover:text-accent-foreground'
               }`}
               onClick={() => setActiveTab('se')}
             >
@@ -265,30 +265,30 @@ export default function UsersPage() {
           </div>
 
           {/* Users Table */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="text-left border-b border-gray-200 dark:border-gray-700">
-                    <th className="px-6 py-3 text-gray-500 dark:text-gray-400 font-medium text-sm">
+                  <tr className="text-left border-b border-border">
+                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
                       Name
                     </th>
-                    <th className="px-6 py-3 text-gray-500 dark:text-gray-400 font-medium text-sm">
+                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
                       Email
                     </th>
-                    <th className="px-6 py-3 text-gray-500 dark:text-gray-400 font-medium text-sm">
+                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
                       Phone
                     </th>
-                    <th className="px-6 py-3 text-gray-500 dark:text-gray-400 font-medium text-sm">
+                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
                       Cost Rate
                     </th>
-                    <th className="px-6 py-3 text-gray-500 dark:text-gray-400 font-medium text-sm">
+                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
                       Bill Rate
                     </th>
-                    <th className="px-6 py-3 text-gray-500 dark:text-gray-400 font-medium text-sm">
+                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
                       Assigned Clients
                     </th>
-                    <th className="px-6 py-3 text-gray-500 dark:text-gray-400 font-medium text-sm">
+                    <th className="px-6 py-3 text-muted-foreground font-medium text-sm">
                       Actions
                     </th>
                   </tr>
@@ -298,11 +298,11 @@ export default function UsersPage() {
                     users.map((user: User) => (
                       <tr
                         key={user.id}
-                        className="border-b border-gray-200 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                        className="border-b border-border last:border-0 hover:bg-accent/50 transition-colors"
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center">
-                            <div className="h-8 w-8 rounded-full overflow-hidden mr-3 bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                            <div className="h-8 w-8 rounded-full overflow-hidden mr-3 bg-muted flex items-center justify-center">
                               {user.avatarUrl ? (
                                 <Image
                                   src={user.avatarUrl}
@@ -312,41 +312,41 @@ export default function UsersPage() {
                                   height={32}
                                 />
                               ) : (
-                                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                                <span className="text-xs font-medium text-muted-foreground">
                                   {user.firstName.charAt(0)}{user.lastName.charAt(0)}
                                 </span>
                               )}
                             </div>
-                            <span className="font-medium text-gray-900 dark:text-gray-100">
+                            <span className="font-medium text-foreground">
                               {user.firstName} {user.lastName}
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-gray-800 dark:text-gray-200">
+                        <td className="px-6 py-4 text-foreground">
                           {user.email}
                         </td>
-                        <td className="px-6 py-4 text-gray-800 dark:text-gray-200">
+                        <td className="px-6 py-4 text-foreground">
                           {formatPhoneNumber(user.phone)}
                         </td>
-                        <td className="px-6 py-4 text-gray-800 dark:text-gray-200">
+                        <td className="px-6 py-4 text-foreground">
                           {formatCurrency(user.costRate)}
                         </td>
-                        <td className="px-6 py-4 text-gray-800 dark:text-gray-200">
+                        <td className="px-6 py-4 text-foreground">
                           {formatCurrency(user.billRate)}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-2">
                             {user.assignedClients.length > 0 ? (
                               user.assignedClients.map((client, index) => (
-                                <span
+                                <Badge
                                   key={index}
-                                  className="px-3 py-1 bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200 text-xs rounded-full"
+                                  variant="secondary"
                                 >
                                   {client}
-                                </span>
+                                </Badge>
                               ))
                             ) : (
-                              <span className="text-gray-500 dark:text-gray-400 text-sm">
+                              <span className="text-muted-foreground text-sm">
                                 None assigned
                               </span>
                             )}
@@ -355,14 +355,14 @@ export default function UsersPage() {
                         <td className="px-6 py-4">
                           <div className="flex space-x-3">
                             <button 
-                              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                              className="text-muted-foreground hover:text-foreground transition-colors"
                               title="Edit user"
                               onClick={() => openEditUserModal(user)}
                             >
                               <Edit className="h-5 w-5" />
                             </button>
                             <button 
-                              className="text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
+                              className="text-muted-foreground hover:text-destructive transition-colors"
                               title="Delete user"
                               onClick={() => openDeleteModal(user)}
                             >
@@ -374,7 +374,7 @@ export default function UsersPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                      <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
                         No {activeTab} users found.
                       </td>
                     </tr>
@@ -432,16 +432,15 @@ export default function UsersPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="role">Role</Label>
-                <select
-                  id="role"
-                  value={formData.role}
-                  onChange={(e) => handleInputChange('role', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
-                >
-                  <option value="admin">Admin</option>
-                  <option value="se">Sales Engineer</option>
-                </select>
+                <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="se">Sales Engineer</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="phone">Phone</Label>
@@ -529,9 +528,9 @@ export default function UsersPage() {
           <DialogHeader>
             <DialogTitle>Delete User</DialogTitle>
           </DialogHeader>
-          <p className="text-gray-600 dark:text-gray-300">
+          <p className="text-muted-foreground">
             Are you sure you want to delete user{' '}
-            <span className="font-semibold">
+            <span className="font-semibold text-foreground">
               {userToDelete?.firstName} {userToDelete?.lastName}
             </span>
             ? This action cannot be undone.

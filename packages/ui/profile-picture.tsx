@@ -105,7 +105,7 @@ export function ProfilePicture({
       </div>
 
       {error && (
-        <div className="absolute top-full mt-2 text-xs text-red-600 whitespace-nowrap">
+        <div className="absolute top-full mt-2 text-xs text-destructive whitespace-nowrap">
           {error}
         </div>
       )}
@@ -225,7 +225,7 @@ export function ProfilePictureUpload({
       )}
 
       {error && (
-        <div className="text-sm text-red-600 text-center">
+        <div className="text-sm text-destructive text-center">
           {error}
         </div>
       )}
