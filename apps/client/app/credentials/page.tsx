@@ -69,20 +69,13 @@ export default function CredentialsPage() {
   const [formData, setFormData] = useState<ServiceFormData>({});
   const [isDirty, setIsDirty] = useState(false);
   
-  // First, get the current user's company
-  const { data: dashboardData } = api.dashboard.getClientDashboard.useQuery();
-  const companyId = dashboardData?.company?.id;
-  
   // Fetch all credentials for the company
-  const { data: credentials, refetch } = api.credentials.getByCompany.useQuery(
-    { companyId: companyId || "" },
-    { enabled: !!companyId }
-  );
+  const { data: credentials, refetch, isLoading: isCredentialsLoading } = api.credentials.getByCompany.useQuery();
   
   // Fetch specific credential when service is selected
   const { data: selectedCredential } = api.credentials.getByService.useQuery(
-    { companyId: companyId || "", service: selectedService },
-    { enabled: !!companyId && !!selectedService }
+    { service: selectedService },
+    { enabled: !!selectedService }
   );
   
   // Save mutation
@@ -124,13 +117,7 @@ export default function CredentialsPage() {
   };
   
   const handleSave = () => {
-    if (!companyId) {
-      toast.error("Company ID not found. Please refresh the page.");
-      return;
-    }
-    
     saveMutation.mutate({
-      companyId,
       service: selectedService,
       name: "Default",
       ...formData,
@@ -409,8 +396,8 @@ export default function CredentialsPage() {
     }
   };
   
-  // Show loading state while fetching company data
-  if (!dashboardData) {
+  // Show loading state while fetching credentials data
+  if (isCredentialsLoading) {
     return (
       <AppLayout
         title="Credentials"
@@ -472,7 +459,7 @@ export default function CredentialsPage() {
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <Icon className="w-5 h-5 text-muted-foreground" />
+                            {Icon && <Icon className="w-5 h-5 text-muted-foreground" />}
                             <span className="font-medium">{serviceLabels[service]}</span>
                           </div>
                           {isConnected && (
@@ -495,7 +482,7 @@ export default function CredentialsPage() {
                     <div className="flex items-center gap-3">
                       {(() => {
                         const Icon = serviceIcons[selectedService];
-                        return <Icon className="w-6 h-6 text-muted-foreground" />;
+                        return Icon ? <Icon className="w-6 h-6 text-muted-foreground" /> : null;
                       })()}
                       <h2 className="text-xl font-semibold">
                         {serviceLabels[selectedService]} Credentials
@@ -516,7 +503,7 @@ export default function CredentialsPage() {
                   <div className="mt-6">
                     <Button 
                       onClick={handleSave}
-                      disabled={!isDirty || saveMutation.isPending || !companyId}
+                      disabled={!isDirty || saveMutation.isPending}
                       className="w-full sm:w-auto"
                     >
                       {saveMutation.isPending ? "Saving..." : "Save Changes"}

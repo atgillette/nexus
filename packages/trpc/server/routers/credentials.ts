@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, clientProcedure } from "../trpc";
 import { ServiceType } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
@@ -28,33 +28,43 @@ const serviceConfigSchema = z.object({
 });
 
 export const credentialsRouter = createTRPCRouter({
-  getByCompany: protectedProcedure
-    .input(z.object({ companyId: z.string() }))
-    .query(async ({ ctx, input }) => {
+  getByCompany: clientProcedure
+    .query(async ({ ctx }) => {
       const credentials = await ctx.db.credential.findMany({
-        where: { companyId: input.companyId },
+        where: { companyId: ctx.companyId },
         orderBy: { service: "asc" },
       });
       
       // Mask sensitive fields before sending to client
       return credentials.map(cred => ({
-        ...cred,
+        id: cred.id,
+        name: cred.name,
+        service: cred.service,
+        companyId: cred.companyId,
+        isActive: cred.isActive,
+        isConnected: cred.isConnected,
+        clientId: cred.clientId,
         clientSecret: cred.clientSecret ? "••••••••" : null,
         accessToken: cred.accessToken ? "••••••••" : null,
         refreshToken: cred.refreshToken ? "••••••••" : null,
+        tokenExpiry: cred.tokenExpiry,
+        lastUsedAt: cred.lastUsedAt,
+        lastSyncAt: cred.lastSyncAt,
+        createdAt: cred.createdAt,
+        updatedAt: cred.updatedAt,
+        createdBy: cred.createdBy,
         config: cred.config ? maskConfigSecrets(cred.config as any, cred.service) : {},
       }));
     }),
 
-  getByService: protectedProcedure
+  getByService: clientProcedure
     .input(z.object({ 
-      companyId: z.string(),
       service: z.nativeEnum(ServiceType),
     }))
     .query(async ({ ctx, input }) => {
       const credential = await ctx.db.credential.findFirst({
         where: { 
-          companyId: input.companyId,
+          companyId: ctx.companyId,
           service: input.service,
         },
       });
@@ -63,17 +73,28 @@ export const credentialsRouter = createTRPCRouter({
       
       // Mask sensitive fields
       return {
-        ...credential,
+        id: credential.id,
+        name: credential.name,
+        service: credential.service,
+        companyId: credential.companyId,
+        isActive: credential.isActive,
+        isConnected: credential.isConnected,
+        clientId: credential.clientId,
         clientSecret: credential.clientSecret ? "••••••••" : null,
         accessToken: credential.accessToken ? "••••••••" : null,
         refreshToken: credential.refreshToken ? "••••••••" : null,
+        tokenExpiry: credential.tokenExpiry,
+        lastUsedAt: credential.lastUsedAt,
+        lastSyncAt: credential.lastSyncAt,
+        createdAt: credential.createdAt,
+        updatedAt: credential.updatedAt,
+        createdBy: credential.createdBy,
         config: credential.config ? maskConfigSecrets(credential.config as any, credential.service) : {},
       };
     }),
 
-  upsert: protectedProcedure
+  upsert: clientProcedure
     .input(z.object({
-      companyId: z.string(),
       service: z.nativeEnum(ServiceType),
       name: z.string().default("Default"),
       clientId: z.string().optional(),
@@ -83,11 +104,11 @@ export const credentialsRouter = createTRPCRouter({
       config: serviceConfigSchema,
     }))
     .mutation(async ({ ctx, input }) => {
-      const { companyId, service, config, ...data } = input;
+      const { service, config, ...data } = input;
       
       // Check if credential exists
       const existing = await ctx.db.credential.findFirst({
-        where: { companyId, service, name: input.name },
+        where: { companyId: ctx.companyId, service, name: input.name },
       });
       
       // Only update sensitive fields if they're not masked placeholders
@@ -115,7 +136,7 @@ export const credentialsRouter = createTRPCRouter({
       } else {
         return await ctx.db.credential.create({
           data: {
-            companyId,
+            companyId: ctx.companyId,
             service,
             name: input.name,
             ...updateData,
@@ -125,11 +146,14 @@ export const credentialsRouter = createTRPCRouter({
       }
     }),
 
-  delete: protectedProcedure
+  delete: clientProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const credential = await ctx.db.credential.findUnique({
-        where: { id: input.id },
+      const credential = await ctx.db.credential.findFirst({
+        where: { 
+          id: input.id,
+          companyId: ctx.companyId // Ensure user can only delete their own company's credentials
+        },
       });
       
       if (!credential) {
@@ -144,7 +168,7 @@ export const credentialsRouter = createTRPCRouter({
       });
     }),
 
-  testConnection: protectedProcedure
+  testConnection: clientProcedure
     .input(z.object({
       service: z.nativeEnum(ServiceType),
       config: serviceConfigSchema,
