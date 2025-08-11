@@ -72,13 +72,12 @@ export default function ClientDashboard() {
       onNavigate={(href) => router.push(href)}
       onProfileClick={() => router.push('/profile')}
       onNotificationsClick={() => console.log('Notifications clicked')}
-      onSettingsClick={() => console.log('Settings clicked')}
     >
       <div className="p-6">
         {/* Welcome message */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Welcome back, {data.company.name}</h2>
-          <p className="text-gray-600">Here's your workflow automation overview</p>
+          <p className="text-gray-600">Here&apos;s your workflow automation overview</p>
         </div>
         {/* ROI Metrics */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
