@@ -83,6 +83,7 @@ export default function AdminDashboard() {
       onNavigate={(href) => router.push(href)}
       onProfileClick={() => router.push('/profile')}
       onNotificationsClick={() => console.log('Notifications clicked')}
+      onLogoutClick={() => router.push('/auth/logout')}
     >
       <div className="pt-16">
         <div className="px-4 py-6">

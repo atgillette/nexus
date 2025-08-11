@@ -14,6 +14,7 @@ interface AppLayoutProps {
   onNavigate?: (href: string) => void;
   onProfileClick?: () => void;
   onNotificationsClick?: () => void;
+  onLogoutClick?: () => void;
 }
 
 export function AppLayout({
@@ -26,6 +27,7 @@ export function AppLayout({
   onNavigate,
   onProfileClick,
   onNotificationsClick,
+  onLogoutClick,
 }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
@@ -44,6 +46,7 @@ export function AppLayout({
         userName={userName}
         onProfileClick={onProfileClick}
         onNotificationsClick={onNotificationsClick}
+        onLogoutClick={onLogoutClick}
       />
       <Sidebar 
         open={sidebarOpen} 
