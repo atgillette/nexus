@@ -92,7 +92,10 @@ export default function CredentialsPage() {
   // Fetch specific credential when service is selected
   const { data: selectedCredential } = api.credentials.getByService.useQuery(
     { service: selectedService },
-    { enabled: !!selectedService }
+    { 
+      enabled: !!selectedService && !!credentials,
+      retry: false,
+    }
   );
   
   // Save mutation
@@ -168,11 +171,22 @@ export default function CredentialsPage() {
   };
   
   const handleSave = () => {
+    // Filter out empty strings from config to avoid validation errors
+    const cleanConfig = Object.entries(formData).reduce((acc, [key, value]) => {
+      if (value && value !== "") {
+        acc[key as keyof ServiceFormData] = value;
+      }
+      return acc;
+    }, {} as ServiceFormData);
+    
     saveMutation.mutate({
       service: selectedService,
       name: "Default",
-      ...formData,
-      config: formData,
+      clientId: formData.clientId || undefined,
+      clientSecret: formData.clientSecret || undefined,
+      accessToken: formData.accessToken || undefined,
+      refreshToken: formData.refreshToken || undefined,
+      config: cleanConfig,
     });
   };
   
