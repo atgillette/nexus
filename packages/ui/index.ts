@@ -8,5 +8,14 @@ export * from "./ui/input";
 export * from "./ui/label";
 export * from "./profile-picture";
 
+// Layout components
+export * from "./header";
+export * from "./sidebar";
+export * from "./app-layout";
+export * from "./time-filter";
+
+// Assets
+export { default as BrainTrustLogo } from "./assets/images/BrainTrust.png";
+
 // Re-export utilities
 export * from "./utils";

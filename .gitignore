@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Turborepo
 .turbo
+
+# UI package prompts
+packages/ui/layout prompt.md

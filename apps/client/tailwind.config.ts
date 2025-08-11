@@ -7,6 +7,9 @@ export default {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    // Include shared packages for monorepo
+    "../../packages/ui/**/*.{js,ts,jsx,tsx,mdx}",
+    "../../packages/auth/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {

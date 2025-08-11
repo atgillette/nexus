@@ -19,6 +19,8 @@ export const dashboardRouter = createTRPCRouter({
         allExecutions,
         recentUsers,
         recentExecutions,
+        companies,
+        executionsWithTimeSaved
       ] = await Promise.all([
         // Total users count
         ctx.db.user.count(),
@@ -55,6 +57,28 @@ export const dashboardRouter = createTRPCRouter({
           include: { 
             workflow: { include: { company: true } }
           }
+        }),
+        
+        // Get all companies for client table
+        ctx.db.company.findMany({
+          take: 10,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            _count: {
+              select: { users: true }
+            }
+          }
+        }),
+        
+        // Get executions with time saved data
+        ctx.db.workflowExecution.findMany({
+          select: { 
+            timeSaved: true,
+            status: true
+          },
+          where: {
+            status: 'completed'
+          }
         })
       ]);
 
@@ -68,6 +92,14 @@ export const dashboardRouter = createTRPCRouter({
       // Calculate revenue (mock calculation based on executions)
       const monthlyRevenue = totalExecutions * 12.50; // $12.50 per execution average
       
+      // Calculate time saved from completed executions
+      const totalTimeSaved = executionsWithTimeSaved.reduce((sum, execution) => {
+        return sum + (execution.timeSaved || 0);
+      }, 0);
+      
+      // Calculate active clients (companies with isActive: true)
+      const activeClients = companies.filter(c => c.isActive).length;
+      
       console.log(`Success rate: ${successRate}%, Revenue: $${monthlyRevenue}`);
       
       return {
@@ -77,7 +109,18 @@ export const dashboardRouter = createTRPCRouter({
           totalExecutions,
           successRate,
           monthlyRevenue,
+          timeSaved: totalTimeSaved,
+          activeClients
         },
+        companies: companies.map(company => ({
+          id: company.id,
+          name: company.name,
+          domain: company.domain,
+          industry: company.industry,
+          isActive: company.isActive,
+          createdAt: company.createdAt.toISOString(),
+          userCount: company._count.users
+        })),
         recentActivity: recentUsers.map(user => ({
           type: 'user_registered' as const,
           user: `${user.firstName} ${user.lastName}`,
@@ -104,7 +147,10 @@ export const dashboardRouter = createTRPCRouter({
           totalExecutions: 0,
           successRate: 0,
           monthlyRevenue: 0,
+          timeSaved: 0,
+          activeClients: 0
         },
+        companies: [],
         recentActivity: [],
         recentExecutions: [],
       };

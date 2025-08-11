@@ -1,6 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@nexus/ui";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, AppLayout } from "@nexus/ui";
 import { api } from "@nexus/trpc/react";
 
 
@@ -14,64 +15,71 @@ function formatCurrency(amount: number): string {
 
 export default function ClientDashboard() {
   const { data, isLoading, error } = api.dashboard.getClientDashboard.useQuery();
+  const router = useRouter();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading dashboard...</p>
+      <AppLayout title="Dashboard" activeNavItem="dashboard" userRole="client">
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading dashboard...</p>
+          </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600">Error loading dashboard: {error.message}</p>
-          {error.data?.code === 'UNAUTHORIZED' && (
-            <p className="mt-2">
-              <a href="/auth/login" className="text-blue-600 hover:underline">
-                Please log in
-              </a>
-            </p>
-          )}
-          {error.data?.code === 'FORBIDDEN' && (
-            <p className="mt-2 text-sm text-gray-600">Client access required</p>
-          )}
+      <AppLayout title="Dashboard" activeNavItem="dashboard" userRole="client">
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-600">Error loading dashboard: {error.message}</p>
+            {error.data?.code === 'UNAUTHORIZED' && (
+              <p className="mt-2">
+                <a href="/auth/login" className="text-blue-600 hover:underline">
+                  Please log in
+                </a>
+              </p>
+            )}
+            {error.data?.code === 'FORBIDDEN' && (
+              <p className="mt-2 text-sm text-gray-600">Client access required</p>
+            )}
+          </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">No data available</p>
+      <AppLayout title="Dashboard" activeNavItem="dashboard" userRole="client">
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-600">No data available</p>
+          </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Nexus Dashboard (TRPC)
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Welcome back, {data.company.name}
-          </p>
+    <AppLayout
+      title="Dashboard"
+      activeNavItem="dashboard"
+      userRole="client"
+      onNavigate={(href) => router.push(href)}
+      onProfileClick={() => router.push('/profile')}
+      onNotificationsClick={() => console.log('Notifications clicked')}
+      onSettingsClick={() => console.log('Settings clicked')}
+    >
+      <div className="p-6">
+        {/* Welcome message */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Welcome back, {data.company.name}</h2>
+          <p className="text-gray-600">Here's your workflow automation overview</p>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* ROI Metrics */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -255,7 +263,7 @@ export default function ClientDashboard() {
             </div>
           </CardContent>
         </Card>
-      </main>
       </div>
+    </AppLayout>
   );
 }
