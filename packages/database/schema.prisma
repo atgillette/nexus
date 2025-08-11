@@ -11,36 +11,54 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  firstName     String
-  lastName      String
-  role          UserRole
-  avatarUrl     String?
-  companyId     String?
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  notifications Notification[]
-  company       Company?       @relation(fields: [companyId], references: [id])
+  id               String                   @id @default(cuid())
+  email            String                   @unique
+  firstName        String
+  lastName         String
+  role             UserRole
+  avatarUrl        String?
+  phone            String?
+  costRate         Float?
+  billRate         Float?
+  companyId        String?
+  isActive         Boolean                  @default(true)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  notifications    Notification[]
+  company          Company?                 @relation(fields: [companyId], references: [id])
+  companyAssignments UserCompanyAssignment[]
 
   @@map("users")
 }
 
 model Company {
-  id           String         @id @default(cuid())
+  id           String                   @id @default(cuid())
   name         String
-  domain       String         @unique
+  domain       String                   @unique
   industry     String?
-  isActive     Boolean        @default(true)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  isActive     Boolean                  @default(true)
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
   billingUsage BillingUsage[]
   credentials  Credential[]
   users        User[]
   workflows    Workflow[]
+  userAssignments UserCompanyAssignment[]
 
   @@map("companies")
+}
+
+model UserCompanyAssignment {
+  id        String   @id @default(cuid())
+  userId    String
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@map("user_company_assignments")
 }
 
 model Workflow {
