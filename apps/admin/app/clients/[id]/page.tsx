@@ -21,33 +21,13 @@ export default function ClientDetailPage() {
     { enabled: !!clientId }
   );
 
-  // Mock workflows data for now - will be replaced with real TRPC endpoint
-  const mockWorkflows = [
-    {
-      id: "workflow-1",
-      name: "Lead Processing",
-      department: "Sales",
-      nodes: 12,
-      executions: 234,
-      exceptions: 2,
-      timeSaved: 30,
-      moneySaved: 75,
-      status: "active",
-      createdAt: "2025-01-15",
-    },
-    {
-      id: "workflow-2", 
-      name: "Onboarding",
-      department: "HR",
-      nodes: 8,
-      executions: 45,
-      exceptions: 0,
-      timeSaved: 120,
-      moneySaved: 180,
-      status: "active",
-      createdAt: "2025-01-10",
-    },
-  ];
+  // Fetch workflows data
+  const { data: workflows = [] } = api.workflows.getByCompanyId.useQuery(
+    { companyId: clientId },
+    { enabled: !!clientId }
+  );
+
+  const utils = api.useUtils();
 
   if (isLoading) {
     return (
@@ -197,9 +177,6 @@ export default function ClientDetailPage() {
                         </thead>
                         <tbody>
                           {company.users.map((user, index) => {
-                            const nameParts = user.name.split(' ');
-                            const firstName = nameParts[0] || '';
-                            const lastName = nameParts.slice(1).join(' ') || '';
                             const department = company.departments.find(d => d.id === user.departmentId);
                             
                             return (
@@ -266,23 +243,29 @@ export default function ClientDetailPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {mockWorkflows.map((workflow, index) => (
+                        {workflows.map((workflow, index) => (
                           <tr key={workflow.id} className={index > 0 ? "border-t" : ""}>
-                            <td className="p-4">{workflow.createdAt}</td>
-                            <td className="p-4">{workflow.department}</td>
+                            <td className="p-4">
+                              {new Date(workflow.createdAt).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                              })}
+                            </td>
+                            <td className="p-4">{workflow.description}</td>
                             <td className="p-4 font-medium text-primary">{workflow.name}</td>
                             <td className="p-4">{workflow.nodes}</td>
                             <td className="p-4 text-blue-600">{workflow.executions}</td>
                             <td className="p-4">{workflow.exceptions}</td>
                             <td className="p-4">
                               <div className="text-right">
-                                {workflow.timeSaved}
+                                {Math.floor(workflow.timeSaved / 60)}
                                 <div className="text-xs text-muted-foreground">min</div>
                               </div>
                             </td>
                             <td className="p-4">
                               <div className="text-right">
-                                {workflow.moneySaved}
+                                {Math.floor(workflow.moneySaved)}
                                 <div className="text-xs text-muted-foreground">USD</div>
                               </div>
                             </td>
@@ -311,7 +294,7 @@ export default function ClientDetailPage() {
         clientId={clientId}
         onSuccess={() => {
           setIsAddWorkflowOpen(false);
-          // TODO: Refetch workflows data when real endpoint is implemented
+          utils.workflows.getByCompanyId.invalidate({ companyId: clientId });
         }}
       />
     </AppLayout>

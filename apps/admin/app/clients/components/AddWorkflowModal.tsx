@@ -14,6 +14,7 @@ import {
   Label,
   Textarea,
 } from "@nexus/ui";
+import { api } from "@nexus/trpc/react";
 
 // Validation schema
 const workflowSchema = z.object({
@@ -38,6 +39,20 @@ export function AddWorkflowModal({
 }: AddWorkflowModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // TRPC mutation for creating workflows
+  const createWorkflowMutation = api.workflows.create.useMutation({
+    onSuccess: () => {
+      reset();
+      onSuccess();
+    },
+    onError: (error) => {
+      console.error("Error creating workflow:", error);
+      setIsSubmitting(false);
+      // TODO: Add proper error handling/toast notifications
+      alert(`Error creating workflow: ${error.message}`);
+    },
+  });
+
   const {
     register,
     handleSubmit,
@@ -54,26 +69,11 @@ export function AddWorkflowModal({
   const onSubmit = async (data: WorkflowFormValues) => {
     setIsSubmitting(true);
     
-    try {
-      // TODO: Replace with actual TRPC mutation when implemented
-      console.log("Creating workflow:", {
-        ...data,
-        clientId,
-      });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Reset form and close modal
-      reset();
-      onSuccess();
-      
-    } catch (error) {
-      console.error("Error creating workflow:", error);
-      // TODO: Add proper error handling/toast notifications
-    } finally {
-      setIsSubmitting(false);
-    }
+    createWorkflowMutation.mutate({
+      name: data.name,
+      description: data.description,
+      companyId: clientId,
+    });
   };
 
   const handleClose = () => {
