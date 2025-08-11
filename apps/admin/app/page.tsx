@@ -6,6 +6,16 @@ import { AppLayout, TimeFilter } from "@nexus/ui";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { api } from "@nexus/trpc/react";
 
+function formatRevenue(amount: number): string {
+  if (amount >= 1000000) {
+    return `$${(amount / 1000000).toFixed(1)}M`;
+  } else if (amount >= 1000) {
+    return `$${(amount / 1000).toFixed(1)}K`;
+  } else {
+    return `$${Math.floor(amount)}`;
+  }
+}
+
 
 
 export default function AdminDashboard() {
@@ -127,7 +137,7 @@ export default function AdminDashboard() {
                   </span>
                 </p>
               </div>
-              <h3 className="text-2xl font-semibold">${Math.floor(data.metrics.monthlyRevenue / 1000)}K</h3>
+              <h3 className="text-2xl font-semibold">{formatRevenue(data.metrics.monthlyRevenue)}</h3>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
               <div className="mb-2">

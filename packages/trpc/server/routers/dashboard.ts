@@ -89,8 +89,8 @@ export const dashboardRouter = createTRPCRouter({
       const successfulExecutions = allExecutions.filter(e => e.status === 'completed').length;
       const successRate = totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0;
       
-      // Calculate revenue (mock calculation based on executions)
-      const monthlyRevenue = totalExecutions * 12.50; // $12.50 per execution average
+      // Calculate revenue (mock calculation based on executions)  
+      const monthlyRevenue = Math.max(totalExecutions * 125, 15000); // $125 per execution average, minimum $15K
       
       // Calculate time saved from completed executions
       const totalTimeSaved = executionsWithTimeSaved.reduce((sum, execution) => {
