@@ -98,11 +98,28 @@ export function ClientForm({
   // Reset form when client changes or component mounts
   useEffect(() => {
     if (editingClient) {
+      // Fix department assignments for users whose departmentId doesn't match available departments
+      const fixedUsers = editingClient.users.map(user => {
+        const matchingDepartment = editingClient.departments.find(dept => dept.id === user.departmentId);
+        
+        if (matchingDepartment) {
+          // Department ID matches, keep it
+          return user;
+        } else {
+          // Department ID doesn't match, clear the assignment
+          // In the future, we could try to match by department name here
+          return {
+            ...user,
+            departmentId: "",
+          };
+        }
+      });
+      
       reset({
         name: editingClient.name,
         url: editingClient.url,
         departments: editingClient.departments,
-        users: editingClient.users,
+        users: fixedUsers,
         solutionsEngineers: editingClient.solutionsEngineers,
       });
     } else {
@@ -266,7 +283,11 @@ export function ClientForm({
                                 <SelectValue placeholder="Select Department" />
                               </SelectTrigger>
                               <SelectContent>
-                                {departmentFields.map((dept) => (
+                                {editingClient?.departments.map((dept) => (
+                                  <SelectItem key={dept.id} value={dept.id}>
+                                    {dept.name}
+                                  </SelectItem>
+                                )) || departmentFields.map((dept) => (
                                   <SelectItem key={dept.id} value={dept.id || ""}>
                                     {watch(`departments.${departmentFields.indexOf(dept)}.name`) || "Unnamed"}
                                   </SelectItem>

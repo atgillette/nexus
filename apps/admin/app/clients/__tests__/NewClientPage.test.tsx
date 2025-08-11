@@ -1,3 +1,4 @@
+import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useRouter } from "next/navigation";
@@ -48,12 +49,33 @@ jest.mock("@nexus/ui", () => {
     CardContent: actual.CardContent || (({ children }: DivProps) => <div>{children}</div>),
     Input: actual.Input || ((props: InputProps) => <input {...props} />),
     Label: actual.Label || (({ children, ...props }: LabelProps) => <label {...props}>{children}</label>),
-    Select: actual.Select || (({ children }: DivProps) => <div>{children}</div>),
-    SelectContent: actual.SelectContent || (({ children }: DivProps) => <div>{children}</div>),
-    SelectItem: actual.SelectItem || (({ children, ...props }: DivProps) => <div {...props}>{children}</div>),
-    SelectTrigger: actual.SelectTrigger || (({ children }: DivProps) => <div>{children}</div>),
-    SelectValue: actual.SelectValue || ((props: SpanProps) => <span {...props} />),
-    Checkbox: actual.Checkbox || ((props: CheckboxProps) => <input type="checkbox" {...props} />),
+    Select: ({ children, onValueChange, value }: any) => {
+      const options = React.Children.toArray(children).filter((child: any) => 
+        child?.type === 'option' || child?.props?.value !== undefined
+      );
+      return (
+        <select 
+          data-testid="select" 
+          role="combobox"
+          onChange={(e) => onValueChange?.(e.target.value)} 
+          value={value}
+        >
+          {options}
+        </select>
+      );
+    },
+    SelectContent: ({ children }: DivProps) => <>{children}</>,
+    SelectItem: ({ children, value }: any) => <option value={value}>{children}</option>,
+    SelectTrigger: ({ children }: DivProps) => <div data-testid="select-trigger">{children}</div>,
+    SelectValue: ({ placeholder }: any) => <div data-testid="select-value">{placeholder}</div>,
+    Checkbox: ({ checked, onCheckedChange, ...props }: any) => (
+      <input 
+        type="checkbox" 
+        checked={checked} 
+        onChange={(e) => onCheckedChange?.(e.target.checked)}
+        {...props} 
+      />
+    ),
   };
 });
 

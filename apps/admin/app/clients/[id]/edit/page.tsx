@@ -22,9 +22,15 @@ export default function EditClientPage() {
     { enabled: !!clientId }
   );
 
+  const utils = api.useUtils();
+
   // Update company mutation
   const updateCompanyMutation = api.companies.updateWithDetails.useMutation({
     onSuccess: () => {
+      // Invalidate relevant queries to refresh the cache
+      utils.companies.getByIdWithDetails.invalidate({ id: clientId });
+      utils.companies.list.invalidate();
+      utils.companies.getDashboardMetrics.invalidate();
       router.push("/clients");
     },
     onError: (error) => {
@@ -37,13 +43,14 @@ export default function EditClientPage() {
   const onSubmit = (data: CompanyFormValues) => {
     setIsSubmitting(true);
     
+    
     // Extract domain from URL
     const domain = data.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
     
     // Prepare departments data
     const departmentsData = data.departments.length > 0 
       ? data.departments.map(dept => ({ 
-          id: dept.id?.startsWith('cl') ? dept.id : undefined,
+          id: dept.id, // Preserve the department ID
           name: dept.name.trim() 
         }))
       : [];
@@ -56,8 +63,10 @@ export default function EditClientPage() {
           const lastName = nameParts.slice(1).join(' ') || '';
           const department = data.departments.find(d => d.id === user.departmentId);
           
+          
+          // Important: preserve the user ID if it exists
           return {
-            id: user.id?.startsWith('cl') ? user.id : undefined,
+            id: user.id, // Don't filter by 'cl' prefix here - let the backend handle it
             firstName,
             lastName,
             email: user.email,
@@ -79,14 +88,17 @@ export default function EditClientPage() {
         }))
       : [];
     
-    updateCompanyMutation.mutate({
+    const submitData = {
       id: clientId,
       name: data.name,
       domain: domain,
       departments: departmentsData,
       users: usersData,
       solutionsEngineers: seData,
-    });
+    };
+    
+    
+    updateCompanyMutation.mutate(submitData);
   };
 
   if (isLoading) {

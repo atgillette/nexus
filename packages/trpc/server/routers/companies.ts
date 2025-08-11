@@ -488,9 +488,6 @@ export const companiesRouter = createTRPCRouter({
 
       // Check for duplicate emails among users
       if (input.users && input.users.length > 0) {
-        const newEmails = input.users.filter(u => !u.id).map(u => u.email);
-        const updatedEmails = input.users.filter(u => u.id).map(u => ({ id: u.id, email: u.email }));
-        
         // Check for duplicates within the submission
         const allEmails = input.users.map(u => u.email);
         const uniqueEmails = new Set(allEmails);
@@ -501,40 +498,33 @@ export const companiesRouter = createTRPCRouter({
           });
         }
 
-        // Check if new emails already exist in database
-        if (newEmails.length > 0) {
-          const existingUsers = await prisma.user.findMany({
+        // Get all user IDs that are being kept (existing users)
+        // These are users that already exist in the database
+        const existingUserIds = input.users
+          .filter(u => u.id && !u.id.startsWith('temp-'))  // Real IDs don't start with 'temp-'
+          .map(u => u.id!);
+
+        // Get all emails for validation
+        const allUserEmails = input.users.map(u => u.email);
+
+        // Check if any emails are already in use by OTHER users (not in our update list)
+        if (allUserEmails.length > 0) {
+          const conflictingUsers = await prisma.user.findMany({
             where: {
-              email: { in: newEmails },
+              email: { in: allUserEmails },
+              // Exclude users that are being updated
+              NOT: {
+                id: { in: existingUserIds },
+              },
             },
             select: { email: true },
           });
 
-          if (existingUsers.length > 0) {
+          if (conflictingUsers.length > 0) {
             throw new TRPCError({
               code: "CONFLICT",
-              message: `Email(s) already exist: ${existingUsers.map(u => u.email).join(", ")}`,
+              message: `Email(s) already exist: ${conflictingUsers.map(u => u.email).join(", ")}`,
             });
-          }
-        }
-
-        // Check if updated emails conflict with other users
-        for (const updatedUser of updatedEmails) {
-          const existingUser = existingCompany.users.find(u => u.id === updatedUser.id);
-          if (existingUser && existingUser.email !== updatedUser.email) {
-            const emailExists = await prisma.user.findFirst({
-              where: {
-                email: updatedUser.email,
-                NOT: { id: updatedUser.id },
-              },
-            });
-
-            if (emailExists) {
-              throw new TRPCError({
-                code: "CONFLICT",
-                message: `Email already exists: ${updatedUser.email}`,
-              });
-            }
           }
         }
       }
@@ -569,13 +559,13 @@ export const companiesRouter = createTRPCRouter({
           },
         });
 
-        // Handle departments
+        // Handle departments and build department map
+        const departmentMap = new Map<string, string>();
+        
         if (input.departments !== undefined) {
-          const departmentMap = new Map<string, string>();
-          
-          // Track which departments to keep
+          // Track which departments to keep (existing ones)
           const departmentsToKeep = input.departments
-            .filter(d => d.id && d.id.startsWith('cl'))
+            .filter(d => d.id && !d.id.startsWith('temp-'))  // Real IDs don't start with 'temp-'
             .map(d => d.id!);
 
           // Delete departments not in the list
@@ -590,7 +580,7 @@ export const companiesRouter = createTRPCRouter({
 
           // Update existing and create new departments
           for (const dept of input.departments) {
-            if (dept.id && dept.id.startsWith('cl')) {
+            if (dept.id && !dept.id.startsWith('temp-')) {
               // Update existing department
               const updated = await tx.department.update({
                 where: { id: dept.id },
@@ -608,56 +598,67 @@ export const companiesRouter = createTRPCRouter({
               departmentMap.set(dept.name, created.id);
             }
           }
+        } else {
+          // If departments weren't updated, fetch existing departments for mapping
+          const existingDepts = await tx.department.findMany({
+            where: { companyId: company.id },
+          });
+          existingDepts.forEach(dept => {
+            departmentMap.set(dept.name, dept.id);
+          });
+        }
 
-          // Handle users
-          if (input.users !== undefined) {
-            // Track which users to keep
-            const usersToKeep = input.users
-              .filter(u => u.id && u.id.startsWith('cl'))
-              .map(u => u.id!);
+        // Handle users
+        if (input.users !== undefined) {
+          // Track which users to keep (existing ones)
+          const usersToKeep = input.users
+            .filter(u => u.id && !u.id.startsWith('temp-'))  // Real IDs don't start with 'temp-'
+            .map(u => u.id!);
 
-            // Delete client users not in the list
-            await tx.user.deleteMany({
-              where: {
-                companyId: company.id,
-                role: "client",
-                NOT: {
-                  id: { in: usersToKeep },
-                },
+          // Delete client users not in the list
+          await tx.user.deleteMany({
+            where: {
+              companyId: company.id,
+              role: "client",
+              NOT: {
+                id: { in: usersToKeep },
               },
-            });
+            },
+          });
 
-            // Update existing and create new users
-            for (const user of input.users) {
-              const userData = {
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                phone: user.phone,
-                departmentId: user.departmentName ? departmentMap.get(user.departmentName) : null,
-                emailNotifications: user.emailNotifications,
-                smsNotifications: user.smsNotifications,
-                billingAccess: user.billingAccess,
-                adminAccess: user.adminAccess,
-              };
+          // Update existing and create new users
+          for (const user of input.users) {
+            const departmentId = user.departmentName ? departmentMap.get(user.departmentName) || null : null;
+            
+            
+            const userData = {
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email,
+              phone: user.phone,
+              departmentId: departmentId,
+              emailNotifications: user.emailNotifications,
+              smsNotifications: user.smsNotifications,
+              billingAccess: user.billingAccess,
+              adminAccess: user.adminAccess,
+            };
 
-              if (user.id && user.id.startsWith('cl')) {
-                // Update existing user
-                await tx.user.update({
-                  where: { id: user.id },
-                  data: userData,
-                });
-              } else {
-                // Create new user
-                await tx.user.create({
-                  data: {
-                    ...userData,
-                    role: "client",
-                    companyId: company.id,
-                    isActive: false, // Start as inactive until invited
-                  },
-                });
-              }
+            if (user.id && !user.id.startsWith('temp-')) {
+              // Update existing user
+              await tx.user.update({
+                where: { id: user.id },
+                data: userData,
+              });
+            } else {
+              // Create new user
+              await tx.user.create({
+                data: {
+                  ...userData,
+                  role: "client",
+                  companyId: company.id,
+                  isActive: false, // Start as inactive until invited
+                },
+              });
             }
           }
         }
