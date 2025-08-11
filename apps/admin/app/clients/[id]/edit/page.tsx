@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AppLayout, Input, Label, Button, Card, CardHeader, CardTitle, CardContent } from "@nexus/ui";
+import { AppLayout, Button } from "@nexus/ui";
 import { ArrowLeft } from "lucide-react";
 import { api } from "@nexus/trpc/react";
-import { companyFormSchema, type CompanyFormValues } from "../../validation";
+import { ClientForm } from "../../components/ClientForm";
+import type { CompanyFormValues } from "../../validation";
 
 export default function EditClientPage() {
   const router = useRouter();
@@ -15,61 +14,78 @@ export default function EditClientPage() {
   const clientId = params.id as string;
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Fetch data
   const { data: profileData } = api.profile.getProfile.useQuery();
-  const { data: company, isLoading, error } = api.companies.getById.useQuery(
+  const { data: seUsers } = api.users.getUsers.useQuery({ role: "se" });
+  const { data: company, isLoading, error } = api.companies.getByIdWithDetails.useQuery(
     { id: clientId },
     { enabled: !!clientId }
   );
 
-  const updateCompanyMutation = api.companies.update.useMutation({
+  // Update company mutation
+  const updateCompanyMutation = api.companies.updateWithDetails.useMutation({
     onSuccess: () => {
       router.push("/clients");
     },
     onError: (error) => {
       setIsSubmitting(false);
-      // Set form error if it's a domain conflict
-      if (error.message.includes("domain already exists")) {
-        setError("domain", {
-          type: "manual",
-          message: "A company with this domain already exists",
-        });
-      }
+      alert(`Error updating client: ${error.message}`);
     },
   });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setError,
-    reset,
-  } = useForm<CompanyFormValues>({
-    resolver: zodResolver(companyFormSchema),
-    defaultValues: {
-      name: "",
-      domain: "",
-      industry: "",
-    },
-  });
-
-  // Populate form when company data is loaded
-  useEffect(() => {
-    if (company) {
-      reset({
-        name: company.name,
-        domain: company.domain,
-        industry: company.industry || "",
-      });
-    }
-  }, [company, reset]);
-
+  // Form submission handler
   const onSubmit = (data: CompanyFormValues) => {
     setIsSubmitting(true);
+    
+    // Extract domain from URL
+    const domain = data.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    
+    // Prepare departments data
+    const departmentsData = data.departments.length > 0 
+      ? data.departments.map(dept => ({ 
+          id: dept.id?.startsWith('cl') ? dept.id : undefined,
+          name: dept.name.trim() 
+        }))
+      : [];
+    
+    // Prepare users data
+    const usersData = data.users.length > 0
+      ? data.users.map(user => {
+          const nameParts = user.name.trim().split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          const department = data.departments.find(d => d.id === user.departmentId);
+          
+          return {
+            id: user.id?.startsWith('cl') ? user.id : undefined,
+            firstName,
+            lastName,
+            email: user.email,
+            phone: user.phone || undefined,
+            departmentName: department?.name || undefined,
+            emailNotifications: user.emailNotifications,
+            smsNotifications: user.smsNotifications,
+            billingAccess: user.billingAccess,
+            adminAccess: user.adminAccess,
+          };
+        })
+      : [];
+    
+    // Prepare SE assignments data
+    const seData = data.solutionsEngineers.length > 0
+      ? data.solutionsEngineers.map((se, index) => ({
+          userId: se.userId,
+          isPrimary: index === 0, // First SE is primary
+        }))
+      : [];
+    
     updateCompanyMutation.mutate({
       id: clientId,
       name: data.name,
-      domain: data.domain,
-      industry: data.industry || null,
+      domain: domain,
+      departments: departmentsData,
+      users: usersData,
+      solutionsEngineers: seData,
     });
   };
 
@@ -118,7 +134,7 @@ export default function EditClientPage() {
       onNotificationsClick={() => console.log('Notifications clicked')}
     >
       <div className="pt-16">
-        <div className="px-4 py-6 max-w-2xl mx-auto">
+        <div className="px-4 py-6 max-w-6xl mx-auto">
           {/* Back button */}
           <button
             onClick={() => router.push("/clients")}
@@ -128,92 +144,13 @@ export default function EditClientPage() {
             Back to Clients
           </button>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Edit Client</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                {/* Company Name */}
-                <div>
-                  <Label htmlFor="name">
-                    Company Name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    {...register("name")}
-                    aria-invalid={!!errors.name}
-                    className="mt-1"
-                    placeholder="Enter company name"
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-destructive mt-1">
-                      {errors.name.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Domain */}
-                <div>
-                  <Label htmlFor="domain">
-                    Domain <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="domain"
-                    type="text"
-                    {...register("domain")}
-                    aria-invalid={!!errors.domain}
-                    className="mt-1"
-                    placeholder="example.com"
-                  />
-                  {errors.domain && (
-                    <p className="text-sm text-destructive mt-1">
-                      {errors.domain.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Industry */}
-                <div>
-                  <Label htmlFor="industry">
-                    Industry
-                  </Label>
-                  <Input
-                    id="industry"
-                    type="text"
-                    {...register("industry")}
-                    aria-invalid={!!errors.industry}
-                    className="mt-1"
-                    placeholder="Technology, Healthcare, Finance, etc."
-                  />
-                  {errors.industry && (
-                    <p className="text-sm text-destructive mt-1">
-                      {errors.industry.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Form Actions */}
-                <div className="flex justify-end space-x-4 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => router.push("/clients")}
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Saving..." : "Save Changes"}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+          <ClientForm
+            editingClient={company}
+            seUsers={seUsers}
+            onSubmit={onSubmit}
+            isSubmitting={isSubmitting || updateCompanyMutation.isPending}
+            onCancel={() => router.push("/clients")}
+          />
         </div>
       </div>
     </AppLayout>

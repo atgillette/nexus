@@ -106,6 +106,78 @@ export const companiesRouter = createTRPCRouter({
       return company;
     }),
 
+  // Get company with full details for editing
+  getByIdWithDetails: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Check if user is admin
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user || user.role !== "admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin users can view company details",
+        });
+      }
+
+      const company = await prisma.company.findUnique({
+        where: { id: input.id },
+        include: {
+          departments: true,
+          users: {
+            where: { role: "client" },
+            include: {
+              department: true,
+            },
+          },
+          seAssignments: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+
+      if (!company) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Company not found",
+        });
+      }
+
+      // Transform to match the expected format
+      return {
+        id: company.id,
+        name: company.name,
+        url: `https://${company.domain}`,
+        departments: company.departments.map(dept => ({
+          id: dept.id,
+          name: dept.name,
+        })),
+        users: company.users.map(user => ({
+          id: user.id,
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          phone: user.phone || "",
+          departmentId: user.departmentId || "",
+          emailNotifications: user.emailNotifications,
+          smsNotifications: user.smsNotifications,
+          billingAccess: user.billingAccess,
+          adminAccess: user.adminAccess,
+        })),
+        solutionsEngineers: company.seAssignments.map(assignment => ({
+          userId: assignment.userId,
+          email: assignment.user.email,
+        })),
+      };
+    }),
+
   // Create new company with comprehensive data
   create: protectedProcedure
     .input(
@@ -278,7 +350,7 @@ export const companiesRouter = createTRPCRouter({
       return result;
     }),
 
-  // Update company
+  // Update company (basic info only)
   update: protectedProcedure
     .input(
       z.object({
@@ -339,6 +411,284 @@ export const companiesRouter = createTRPCRouter({
       });
 
       return company;
+    }),
+
+  // Update company with full details (departments, users, SE assignments)
+  updateWithDetails: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().min(1, "Company name is required"),
+        domain: z.string().min(1, "Domain is required"),
+        departments: z.array(z.object({
+          id: z.string().optional(), // Existing departments have IDs
+          name: z.string().min(1, "Department name is required"),
+        })).optional(),
+        users: z.array(z.object({
+          id: z.string().optional(), // Existing users have IDs
+          firstName: z.string().min(1, "First name is required"),
+          lastName: z.string().min(1, "Last name is required"),
+          email: z.string().email("Invalid email address"),
+          phone: z.string().optional(),
+          departmentName: z.string().optional(),
+          emailNotifications: z.boolean().default(false),
+          smsNotifications: z.boolean().default(false),
+          billingAccess: z.boolean().default(false),
+          adminAccess: z.boolean().default(false),
+        })).optional(),
+        solutionsEngineers: z.array(z.object({
+          userId: z.string().min(1, "SE user ID is required"),
+          isPrimary: z.boolean().default(false),
+        })).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user || user.role !== "admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin users can update companies",
+        });
+      }
+
+      // Check if company exists
+      const existingCompany = await prisma.company.findUnique({
+        where: { id: input.id },
+        include: {
+          departments: true,
+          users: { where: { role: "client" } },
+          seAssignments: true,
+        },
+      });
+
+      if (!existingCompany) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Company not found",
+        });
+      }
+
+      // Check if domain is being changed and if new domain is unique
+      if (input.domain !== existingCompany.domain) {
+        const domainExists = await prisma.company.findUnique({
+          where: { domain: input.domain },
+        });
+
+        if (domainExists) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "A company with this domain already exists",
+          });
+        }
+      }
+
+      // Check for duplicate emails among users
+      if (input.users && input.users.length > 0) {
+        const newEmails = input.users.filter(u => !u.id).map(u => u.email);
+        const updatedEmails = input.users.filter(u => u.id).map(u => ({ id: u.id, email: u.email }));
+        
+        // Check for duplicates within the submission
+        const allEmails = input.users.map(u => u.email);
+        const uniqueEmails = new Set(allEmails);
+        if (allEmails.length !== uniqueEmails.size) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Duplicate email addresses found in user list",
+          });
+        }
+
+        // Check if new emails already exist in database
+        if (newEmails.length > 0) {
+          const existingUsers = await prisma.user.findMany({
+            where: {
+              email: { in: newEmails },
+            },
+            select: { email: true },
+          });
+
+          if (existingUsers.length > 0) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: `Email(s) already exist: ${existingUsers.map(u => u.email).join(", ")}`,
+            });
+          }
+        }
+
+        // Check if updated emails conflict with other users
+        for (const updatedUser of updatedEmails) {
+          const existingUser = existingCompany.users.find(u => u.id === updatedUser.id);
+          if (existingUser && existingUser.email !== updatedUser.email) {
+            const emailExists = await prisma.user.findFirst({
+              where: {
+                email: updatedUser.email,
+                NOT: { id: updatedUser.id },
+              },
+            });
+
+            if (emailExists) {
+              throw new TRPCError({
+                code: "CONFLICT",
+                message: `Email already exists: ${updatedUser.email}`,
+              });
+            }
+          }
+        }
+      }
+
+      // Validate SE users exist and have correct role
+      if (input.solutionsEngineers && input.solutionsEngineers.length > 0) {
+        const seUserIds = input.solutionsEngineers.map(se => se.userId);
+        const seUsers = await prisma.user.findMany({
+          where: {
+            id: { in: seUserIds },
+            role: "se",
+          },
+          select: { id: true },
+        });
+
+        if (seUsers.length !== seUserIds.length) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "One or more selected users are not valid Solutions Engineers",
+          });
+        }
+      }
+
+      // Use transaction to ensure all-or-nothing update
+      const result = await prisma.$transaction(async (tx) => {
+        // Update the company
+        const company = await tx.company.update({
+          where: { id: input.id },
+          data: {
+            name: input.name,
+            domain: input.domain,
+          },
+        });
+
+        // Handle departments
+        if (input.departments !== undefined) {
+          const departmentMap = new Map<string, string>();
+          
+          // Track which departments to keep
+          const departmentsToKeep = input.departments
+            .filter(d => d.id && d.id.startsWith('cl'))
+            .map(d => d.id!);
+
+          // Delete departments not in the list
+          await tx.department.deleteMany({
+            where: {
+              companyId: company.id,
+              NOT: {
+                id: { in: departmentsToKeep },
+              },
+            },
+          });
+
+          // Update existing and create new departments
+          for (const dept of input.departments) {
+            if (dept.id && dept.id.startsWith('cl')) {
+              // Update existing department
+              const updated = await tx.department.update({
+                where: { id: dept.id },
+                data: { name: dept.name },
+              });
+              departmentMap.set(dept.name, updated.id);
+            } else {
+              // Create new department
+              const created = await tx.department.create({
+                data: {
+                  name: dept.name,
+                  companyId: company.id,
+                },
+              });
+              departmentMap.set(dept.name, created.id);
+            }
+          }
+
+          // Handle users
+          if (input.users !== undefined) {
+            // Track which users to keep
+            const usersToKeep = input.users
+              .filter(u => u.id && u.id.startsWith('cl'))
+              .map(u => u.id!);
+
+            // Delete client users not in the list
+            await tx.user.deleteMany({
+              where: {
+                companyId: company.id,
+                role: "client",
+                NOT: {
+                  id: { in: usersToKeep },
+                },
+              },
+            });
+
+            // Update existing and create new users
+            for (const user of input.users) {
+              const userData = {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                phone: user.phone,
+                departmentId: user.departmentName ? departmentMap.get(user.departmentName) : null,
+                emailNotifications: user.emailNotifications,
+                smsNotifications: user.smsNotifications,
+                billingAccess: user.billingAccess,
+                adminAccess: user.adminAccess,
+              };
+
+              if (user.id && user.id.startsWith('cl')) {
+                // Update existing user
+                await tx.user.update({
+                  where: { id: user.id },
+                  data: userData,
+                });
+              } else {
+                // Create new user
+                await tx.user.create({
+                  data: {
+                    ...userData,
+                    role: "client",
+                    companyId: company.id,
+                    isActive: false, // Start as inactive until invited
+                  },
+                });
+              }
+            }
+          }
+        }
+
+        // Handle SE assignments
+        if (input.solutionsEngineers !== undefined) {
+          // Delete all existing SE assignments
+          await tx.companySEAssignment.deleteMany({
+            where: { companyId: company.id },
+          });
+
+          // Create new SE assignments
+          if (input.solutionsEngineers.length > 0) {
+            await Promise.all(
+              input.solutionsEngineers.map(se =>
+                tx.companySEAssignment.create({
+                  data: {
+                    companyId: company.id,
+                    userId: se.userId,
+                    isPrimary: se.isPrimary,
+                  },
+                })
+              )
+            );
+          }
+        }
+
+        return company;
+      });
+
+      return result;
     }),
 
   // Department management mutations

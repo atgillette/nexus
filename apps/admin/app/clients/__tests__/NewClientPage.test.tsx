@@ -30,22 +30,30 @@ jest.mock("@nexus/trpc/react", () => ({
   },
 }));
 
+// Type definitions for UI components
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { children?: React.ReactNode };
+type DivProps = React.HTMLAttributes<HTMLDivElement> & { children?: React.ReactNode };
+type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
+type LabelProps = React.LabelHTMLAttributes<HTMLLabelElement> & { children?: React.ReactNode };
+type SpanProps = React.HTMLAttributes<HTMLSpanElement>;
+type CheckboxProps = React.InputHTMLAttributes<HTMLInputElement>;
+
 // Mock UI components that might cause issues in tests
 jest.mock("@nexus/ui", () => {
   const actual = jest.requireActual("@nexus/ui");
   return {
     AppLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    Button: actual.Button || (({ children, ...props }: any) => <button {...props}>{children}</button>),
-    Card: actual.Card || (({ children }: any) => <div>{children}</div>),
-    CardContent: actual.CardContent || (({ children }: any) => <div>{children}</div>),
-    Input: actual.Input || ((props: any) => <input {...props} />),
-    Label: actual.Label || (({ children, ...props }: any) => <label {...props}>{children}</label>),
-    Select: actual.Select || (({ children }: any) => <div>{children}</div>),
-    SelectContent: actual.SelectContent || (({ children }: any) => <div>{children}</div>),
-    SelectItem: actual.SelectItem || (({ children, ...props }: any) => <div {...props}>{children}</div>),
-    SelectTrigger: actual.SelectTrigger || (({ children }: any) => <div>{children}</div>),
-    SelectValue: actual.SelectValue || ((props: any) => <span {...props} />),
-    Checkbox: actual.Checkbox || ((props: any) => <input type="checkbox" {...props} />),
+    Button: actual.Button || (({ children, ...props }: ButtonProps) => <button {...props}>{children}</button>),
+    Card: actual.Card || (({ children }: DivProps) => <div>{children}</div>),
+    CardContent: actual.CardContent || (({ children }: DivProps) => <div>{children}</div>),
+    Input: actual.Input || ((props: InputProps) => <input {...props} />),
+    Label: actual.Label || (({ children, ...props }: LabelProps) => <label {...props}>{children}</label>),
+    Select: actual.Select || (({ children }: DivProps) => <div>{children}</div>),
+    SelectContent: actual.SelectContent || (({ children }: DivProps) => <div>{children}</div>),
+    SelectItem: actual.SelectItem || (({ children, ...props }: DivProps) => <div {...props}>{children}</div>),
+    SelectTrigger: actual.SelectTrigger || (({ children }: DivProps) => <div>{children}</div>),
+    SelectValue: actual.SelectValue || ((props: SpanProps) => <span {...props} />),
+    Checkbox: actual.Checkbox || ((props: CheckboxProps) => <input type="checkbox" {...props} />),
   };
 });
 
@@ -153,7 +161,6 @@ describe("NewClientPage", () => {
 
   describe("Department Management", () => {
     it("should add a new department", async () => {
-      const user = userEvent.setup();
       render(<NewClientPage />);
       
       const addButton = screen.getByRole("button", { name: /Add Department/i });
