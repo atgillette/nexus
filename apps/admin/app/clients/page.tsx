@@ -177,8 +177,13 @@ export default function ClientsPage() {
                         key={company.id}
                         className="border-b border-border last:border-0 hover:bg-accent/50 transition-colors"
                       >
-                        <td className="px-5 py-4 text-blue-600 dark:text-blue-400 font-medium">
-                          {company.name}
+                        <td className="px-5 py-4">
+                          <button
+                            onClick={() => router.push(`/clients/${company.id}`)}
+                            className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
+                          >
+                            {company.name}
+                          </button>
                         </td>
                         <td className="px-5 py-4 text-foreground">
                           {new Date(company.createdAt).toLocaleDateString('en-US', { 
