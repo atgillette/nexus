@@ -21,12 +21,19 @@ model User {
   costRate         Float?
   billRate         Float?
   companyId        String?
+  departmentId     String?
+  emailNotifications Boolean               @default(false)
+  smsNotifications Boolean                 @default(false)
+  billingAccess    Boolean                  @default(false)
+  adminAccess      Boolean                  @default(false)
   isActive         Boolean                  @default(true)
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
   notifications    Notification[]
   company          Company?                 @relation(fields: [companyId], references: [id])
+  department       Department?              @relation(fields: [departmentId], references: [id])
   companyAssignments UserCompanyAssignment[]
+  seAssignments    CompanySEAssignment[]
 
   @@map("users")
 }
@@ -43,7 +50,9 @@ model Company {
   credentials  Credential[]
   users        User[]
   workflows    Workflow[]
+  departments  Department[]
   userAssignments UserCompanyAssignment[]
+  seAssignments CompanySEAssignment[]
 
   @@map("companies")
 }
@@ -59,6 +68,34 @@ model UserCompanyAssignment {
 
   @@unique([userId, companyId])
   @@map("user_company_assignments")
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users     User[]
+
+  @@unique([companyId, name])
+  @@map("departments")
+}
+
+model CompanySEAssignment {
+  id        String   @id @default(cuid())
+  companyId String
+  userId    String
+  isPrimary Boolean  @default(false)
+  assignedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+  @@map("company_se_assignments")
 }
 
 model Workflow {

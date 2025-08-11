@@ -106,13 +106,31 @@ export const companiesRouter = createTRPCRouter({
       return company;
     }),
 
-  // Create new company
+  // Create new company with comprehensive data
   create: protectedProcedure
     .input(
       z.object({
         name: z.string().min(1, "Company name is required"),
         domain: z.string().min(1, "Domain is required"),
         industry: z.string().optional(),
+        departments: z.array(z.object({
+          name: z.string().min(1, "Department name is required"),
+        })).optional(),
+        users: z.array(z.object({
+          firstName: z.string().min(1, "First name is required"),
+          lastName: z.string().min(1, "Last name is required"),
+          email: z.string().email("Invalid email address"),
+          phone: z.string().optional(),
+          departmentName: z.string().optional(),
+          emailNotifications: z.boolean().default(false),
+          smsNotifications: z.boolean().default(false),
+          billingAccess: z.boolean().default(false),
+          adminAccess: z.boolean().default(false),
+        })).optional(),
+        solutionsEngineers: z.array(z.object({
+          userId: z.string().min(1, "SE user ID is required"),
+          isPrimary: z.boolean().default(false),
+        })).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -140,15 +158,124 @@ export const companiesRouter = createTRPCRouter({
         });
       }
 
-      const company = await prisma.company.create({
-        data: {
-          name: input.name,
-          domain: input.domain,
-          industry: input.industry,
-        },
+      // Check for duplicate emails among new users
+      if (input.users && input.users.length > 0) {
+        const emails = input.users.map(u => u.email);
+        const uniqueEmails = new Set(emails);
+        if (emails.length !== uniqueEmails.size) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Duplicate email addresses found in user list",
+          });
+        }
+
+        // Check if any emails already exist in the database
+        const existingUsers = await prisma.user.findMany({
+          where: {
+            email: { in: emails },
+          },
+          select: { email: true },
+        });
+
+        if (existingUsers.length > 0) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: `Email(s) already exist: ${existingUsers.map(u => u.email).join(", ")}`,
+          });
+        }
+      }
+
+      // Validate SE users exist and have correct role
+      if (input.solutionsEngineers && input.solutionsEngineers.length > 0) {
+        const seUserIds = input.solutionsEngineers.map(se => se.userId);
+        const seUsers = await prisma.user.findMany({
+          where: {
+            id: { in: seUserIds },
+            role: "se",
+          },
+          select: { id: true },
+        });
+
+        if (seUsers.length !== seUserIds.length) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "One or more selected users are not valid Solutions Engineers",
+          });
+        }
+      }
+
+      // Use transaction to ensure all-or-nothing creation
+      const result = await prisma.$transaction(async (tx) => {
+        // Create the company
+        const company = await tx.company.create({
+          data: {
+            name: input.name,
+            domain: input.domain,
+            industry: input.industry,
+          },
+        });
+
+        // Create departments
+        const departmentMap = new Map<string, string>();
+        if (input.departments && input.departments.length > 0) {
+          const departments = await Promise.all(
+            input.departments.map(dept =>
+              tx.department.create({
+                data: {
+                  name: dept.name,
+                  companyId: company.id,
+                },
+              })
+            )
+          );
+          departments.forEach(dept => {
+            departmentMap.set(dept.name, dept.id);
+          });
+        }
+
+        // Create client users
+        if (input.users && input.users.length > 0) {
+          await Promise.all(
+            input.users.map(user =>
+              tx.user.create({
+                data: {
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  email: user.email,
+                  phone: user.phone,
+                  role: "client",
+                  companyId: company.id,
+                  departmentId: user.departmentName ? departmentMap.get(user.departmentName) : null,
+                  emailNotifications: user.emailNotifications,
+                  smsNotifications: user.smsNotifications,
+                  billingAccess: user.billingAccess,
+                  adminAccess: user.adminAccess,
+                  isActive: false, // Start as inactive until invited
+                },
+              })
+            )
+          );
+        }
+
+        // Create SE assignments
+        if (input.solutionsEngineers && input.solutionsEngineers.length > 0) {
+          await Promise.all(
+            input.solutionsEngineers.map(se =>
+              tx.companySEAssignment.create({
+                data: {
+                  companyId: company.id,
+                  userId: se.userId,
+                  isPrimary: se.isPrimary,
+                },
+              })
+            )
+          );
+        }
+
+        return company;
       });
 
-      return company;
+      return result;
     }),
 
   // Update company
@@ -212,6 +339,399 @@ export const companiesRouter = createTRPCRouter({
       });
 
       return company;
+    }),
+
+  // Department management mutations
+  addDepartment: protectedProcedure
+    .input(
+      z.object({
+        companyId: z.string(),
+        name: z.string().min(1, "Department name is required"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user || user.role !== "admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin users can manage departments",
+        });
+      }
+
+      // Check if department name already exists for this company
+      const existing = await prisma.department.findFirst({
+        where: {
+          companyId: input.companyId,
+          name: input.name,
+        },
+      });
+
+      if (existing) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Department with this name already exists",
+        });
+      }
+
+      return await prisma.department.create({
+        data: {
+          companyId: input.companyId,
+          name: input.name,
+        },
+      });
+    }),
+
+  updateDepartment: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().min(1, "Department name is required"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user || user.role !== "admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin users can manage departments",
+        });
+      }
+
+      return await prisma.department.update({
+        where: { id: input.id },
+        data: { name: input.name },
+      });
+    }),
+
+  removeDepartment: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user || user.role !== "admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin users can manage departments",
+        });
+      }
+
+      // Check if department has users
+      const usersInDept = await prisma.user.count({
+        where: { departmentId: input.id },
+      });
+
+      if (usersInDept > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot delete department with assigned users",
+        });
+      }
+
+      return await prisma.department.delete({
+        where: { id: input.id },
+      });
+    }),
+
+  // Client user management mutations
+  addUser: protectedProcedure
+    .input(
+      z.object({
+        companyId: z.string(),
+        firstName: z.string().min(1, "First name is required"),
+        lastName: z.string().min(1, "Last name is required"),
+        email: z.string().email("Invalid email address"),
+        phone: z.string().optional(),
+        departmentId: z.string().optional(),
+        emailNotifications: z.boolean().default(false),
+        smsNotifications: z.boolean().default(false),
+        billingAccess: z.boolean().default(false),
+        adminAccess: z.boolean().default(false),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user || user.role !== "admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin users can manage client users",
+        });
+      }
+
+      // Check if email already exists
+      const existing = await prisma.user.findUnique({
+        where: { email: input.email },
+      });
+
+      if (existing) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "User with this email already exists",
+        });
+      }
+
+      return await prisma.user.create({
+        data: {
+          firstName: input.firstName,
+          lastName: input.lastName,
+          email: input.email,
+          phone: input.phone,
+          role: "client",
+          companyId: input.companyId,
+          departmentId: input.departmentId,
+          emailNotifications: input.emailNotifications,
+          smsNotifications: input.smsNotifications,
+          billingAccess: input.billingAccess,
+          adminAccess: input.adminAccess,
+          isActive: false, // Start as inactive until invited
+        },
+      });
+    }),
+
+  updateUser: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        firstName: z.string().min(1, "First name is required"),
+        lastName: z.string().min(1, "Last name is required"),
+        email: z.string().email("Invalid email address"),
+        phone: z.string().optional().nullable(),
+        departmentId: z.string().optional().nullable(),
+        emailNotifications: z.boolean(),
+        smsNotifications: z.boolean(),
+        billingAccess: z.boolean(),
+        adminAccess: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user || user.role !== "admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin users can manage client users",
+        });
+      }
+
+      // Check if email is being changed and if new email is unique
+      const existingUser = await prisma.user.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!existingUser) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      if (input.email !== existingUser.email) {
+        const emailExists = await prisma.user.findUnique({
+          where: { email: input.email },
+        });
+
+        if (emailExists) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "User with this email already exists",
+          });
+        }
+      }
+
+      return await prisma.user.update({
+        where: { id: input.id },
+        data: {
+          firstName: input.firstName,
+          lastName: input.lastName,
+          email: input.email,
+          phone: input.phone,
+          departmentId: input.departmentId,
+          emailNotifications: input.emailNotifications,
+          smsNotifications: input.smsNotifications,
+          billingAccess: input.billingAccess,
+          adminAccess: input.adminAccess,
+        },
+      });
+    }),
+
+  removeUser: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user || user.role !== "admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin users can manage client users",
+        });
+      }
+
+      const targetUser = await prisma.user.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!targetUser || targetUser.role !== "client") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Can only remove client users",
+        });
+      }
+
+      return await prisma.user.delete({
+        where: { id: input.id },
+      });
+    }),
+
+  // SE assignment management mutations
+  assignSE: protectedProcedure
+    .input(
+      z.object({
+        companyId: z.string(),
+        userId: z.string(),
+        isPrimary: z.boolean().default(false),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user || user.role !== "admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin users can manage SE assignments",
+        });
+      }
+
+      // Check if SE user exists and has correct role
+      const seUser = await prisma.user.findUnique({
+        where: { id: input.userId },
+      });
+
+      if (!seUser || seUser.role !== "se") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "User is not a Solutions Engineer",
+        });
+      }
+
+      // Check if already assigned
+      const existing = await prisma.companySEAssignment.findUnique({
+        where: {
+          companyId_userId: {
+            companyId: input.companyId,
+            userId: input.userId,
+          },
+        },
+      });
+
+      if (existing) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "SE is already assigned to this company",
+        });
+      }
+
+      return await prisma.companySEAssignment.create({
+        data: {
+          companyId: input.companyId,
+          userId: input.userId,
+          isPrimary: input.isPrimary,
+        },
+      });
+    }),
+
+  unassignSE: protectedProcedure
+    .input(
+      z.object({
+        companyId: z.string(),
+        userId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user || user.role !== "admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin users can manage SE assignments",
+        });
+      }
+
+      return await prisma.companySEAssignment.delete({
+        where: {
+          companyId_userId: {
+            companyId: input.companyId,
+            userId: input.userId,
+          },
+        },
+      });
+    }),
+
+  updateSEAssignment: protectedProcedure
+    .input(
+      z.object({
+        companyId: z.string(),
+        userId: z.string(),
+        isPrimary: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user || user.role !== "admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin users can manage SE assignments",
+        });
+      }
+
+      return await prisma.companySEAssignment.update({
+        where: {
+          companyId_userId: {
+            companyId: input.companyId,
+            userId: input.userId,
+          },
+        },
+        data: {
+          isPrimary: input.isPrimary,
+        },
+      });
     }),
 
   // Get dashboard metrics for companies
