@@ -189,6 +189,83 @@ export const dashboardRouter = createTRPCRouter({
     }
   }),
 
+  // Workflow ROI data for client
+  getWorkflowROI: clientProcedure.query(async ({ ctx }) => {
+    try {
+      console.log("Fetching workflow ROI data...");
+      
+      // Get company workflows with execution data
+      const workflows = await ctx.db.workflow.findMany({
+        where: { companyId: ctx.companyId },
+        include: {
+          executions: {
+            select: {
+              id: true,
+              status: true,
+              timeSaved: true,
+              startedAt: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      // Use hourly rate for cost calculation (default $100/hour)
+      const HOURLY_RATE = 100;
+      
+      // Transform workflow data with ROI calculations
+      const workflowROI = workflows.map(workflow => {
+        const executions = workflow.executions;
+        const completedExecutions = executions.filter(e => e.status === 'completed');
+        const failedExecutions = executions.filter(e => e.status === 'failed');
+        
+        // Calculate total time saved (in hours)
+        const totalTimeSaved = completedExecutions.reduce((sum, execution) => {
+          return sum + (execution.timeSaved || 0);
+        }, 0);
+        
+        // Calculate cost saved based on time saved
+        const costSaved = totalTimeSaved * HOURLY_RATE;
+        
+        return {
+          id: workflow.id,
+          createdAt: workflow.createdAt.toISOString(),
+          name: workflow.name,
+          description: workflow.description || 'Automated workflow process',
+          nodes: workflow.nodeCount,
+          executions: executions.length,
+          exceptions: failedExecutions.length,
+          timeSaved: totalTimeSaved,
+          costSaved
+        };
+      });
+      
+      console.log(`Found ${workflows.length} workflows with ROI data`);
+      
+      return {
+        workflows: workflowROI,
+        summary: {
+          totalWorkflows: workflows.length,
+          totalTimeSaved: workflowROI.reduce((sum, w) => sum + w.timeSaved, 0),
+          totalCostSaved: workflowROI.reduce((sum, w) => sum + w.costSaved, 0),
+          totalExecutions: workflowROI.reduce((sum, w) => sum + w.executions, 0)
+        }
+      };
+      
+    } catch (error) {
+      console.error("Error fetching workflow ROI data:", error);
+      return {
+        workflows: [],
+        summary: {
+          totalWorkflows: 0,
+          totalTimeSaved: 0,
+          totalCostSaved: 0,
+          totalExecutions: 0
+        }
+      };
+    }
+  }),
+
   // Client dashboard data  
   getClientDashboard: clientProcedure.query(async ({ ctx }) => {
     try {
