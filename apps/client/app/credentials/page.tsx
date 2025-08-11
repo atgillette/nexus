@@ -133,7 +133,7 @@ export default function CredentialsPage() {
   };
   
   const isServiceConnected = (service: ServiceType) => {
-    return credentials?.some(c => c.service === service && c.isConnected);
+    return credentials?.some((c: { service: ServiceType; isConnected: boolean }) => c.service === service && c.isConnected);
   };
   
   const renderServiceForm = () => {
