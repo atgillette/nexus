@@ -6,11 +6,40 @@ import {
   clientProcedure,
 } from "../trpc";
 
+function getDateRangeForFilter(filter: string): Date | null {
+  const now = new Date();
+  
+  switch (filter) {
+    case 'last-7':
+      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    case 'last-30':
+      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    case 'mtd': // Month to date
+      return new Date(now.getFullYear(), now.getMonth(), 1);
+    case 'qtd': // Quarter to date
+      const quarter = Math.floor(now.getMonth() / 3);
+      return new Date(now.getFullYear(), quarter * 3, 1);
+    case 'ytd': // Year to date
+      return new Date(now.getFullYear(), 0, 1);
+    case 'itd': // Inception to date
+      return null; // No filter, show all data
+    default:
+      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // Default to last 30 days
+  }
+}
+
 export const dashboardRouter = createTRPCRouter({
   // Admin dashboard data
-  getAdminDashboard: adminProcedure.query(async ({ ctx }) => {
+  getAdminDashboard: adminProcedure
+    .input(z.object({
+      timeFilter: z.string().optional().default('last-30')
+    }))
+    .query(async ({ ctx, input }) => {
     try {
-      console.log('Fetching admin dashboard data via TRPC...');
+      console.log(`Fetching admin dashboard data via TRPC for filter: ${input.timeFilter}...`);
+      
+      const startDate = getDateRangeForFilter(input.timeFilter);
+      const dateFilter = startDate ? { gte: startDate } : undefined;
       
       // Get dashboard metrics directly from database
       const [
@@ -32,7 +61,8 @@ export const dashboardRouter = createTRPCRouter({
         
         // Get all executions to calculate success rate
         ctx.db.workflowExecution.findMany({
-          select: { status: true }
+          select: { status: true },
+          where: dateFilter ? { startedAt: dateFilter } : undefined
         }),
         
         // Recent user registrations (last 5)
@@ -56,7 +86,8 @@ export const dashboardRouter = createTRPCRouter({
           orderBy: { startedAt: 'desc' },
           include: { 
             workflow: { include: { company: true } }
-          }
+          },
+          where: dateFilter ? { startedAt: dateFilter } : undefined
         }),
         
         // Get all companies for client table
@@ -77,7 +108,8 @@ export const dashboardRouter = createTRPCRouter({
             status: true
           },
           where: {
-            status: 'completed'
+            status: 'completed',
+            ...(dateFilter ? { startedAt: dateFilter } : {})
           }
         })
       ]);

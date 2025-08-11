@@ -14,6 +14,9 @@ export * from "./sidebar";
 export * from "./app-layout";
 export * from "./time-filter";
 
+// Skeleton components
+export { Skeleton, MetricCardSkeleton, TableSkeleton } from "./skeleton";
+
 // Assets
 export { default as BrainTrustLogo } from "./assets/images/BrainTrust.png";
 

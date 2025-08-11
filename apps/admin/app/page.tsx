@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AppLayout, TimeFilter } from "@nexus/ui";
+import { AppLayout, TimeFilter, MetricCardSkeleton, TableSkeleton } from "@nexus/ui";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { api } from "@nexus/trpc/react";
 
@@ -19,9 +19,11 @@ function formatRevenue(amount: number): string {
 
 
 export default function AdminDashboard() {
-  const { data, isLoading, error } = api.dashboard.getAdminDashboard.useQuery();
-  const { data: profileData } = api.profile.getProfile.useQuery();
   const [selectedTimeFilter, setSelectedTimeFilter] = useState('last-7');
+  const { data, isLoading, error, isFetching } = api.dashboard.getAdminDashboard.useQuery({
+    timeFilter: selectedTimeFilter
+  });
+  const { data: profileData } = api.profile.getProfile.useQuery();
   const router = useRouter();
   
   if (isLoading) {
@@ -91,6 +93,14 @@ export default function AdminDashboard() {
           />
           {/* Stats grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+            {isFetching && !isLoading ? (
+              // Show skeletons while refetching (time filter change)
+              Array.from({ length: 5 }).map((_, i) => (
+                <MetricCardSkeleton key={i} />
+              ))
+            ) : (
+              // Show actual data
+              <>
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
               <div className="mb-2">
                 <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
@@ -151,8 +161,13 @@ export default function AdminDashboard() {
               </div>
               <h3 className="text-2xl font-semibold">{data.metrics.activeClients || 0}</h3>
             </div>
+              </>
+            )}
           </div>
           {/* Clients table */}
+          {isFetching && !isLoading ? (
+            <TableSkeleton />
+          ) : (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="flex justify-between items-center p-5 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold">All Clients</h2>
@@ -301,6 +316,7 @@ export default function AdminDashboard() {
               </table>
             </div>
           </div>
+          )}
         </div>
       </div>
     </AppLayout>
