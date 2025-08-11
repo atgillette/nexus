@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
@@ -20,7 +20,7 @@ import {
 } from "@nexus/ui";
 import type { User, Company } from "../types";
 import {
-  userFormSchemaWithRefinements,
+  userFormSchema,
   type UserFormValues,
 } from "../validation";
 
@@ -48,8 +48,9 @@ export function UserForm({
     setValue,
     watch,
     reset,
+    setError,
   } = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchemaWithRefinements),
+    resolver: zodResolver(userFormSchema) as Resolver<UserFormValues>,
     defaultValues: {
       email: "",
       firstName: "",
@@ -111,6 +112,18 @@ export function UserForm({
   };
 
   const onFormSubmit = (data: UserFormValues) => {
+    // Manual validation for bill rate vs cost rate
+    if (data.costRate && data.billRate) {
+      const cost = parseFloat(data.costRate);
+      const bill = parseFloat(data.billRate);
+      if (bill < cost) {
+        setError("billRate", {
+          type: "manual",
+          message: "Bill rate must be equal to or higher than cost rate",
+        });
+        return;
+      }
+    }
     onSubmit(data);
   };
 
