@@ -7,14 +7,22 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jsdom',
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^@nexus/ui$': '<rootDir>/../../packages/ui',
     '^@nexus/database$': '<rootDir>/../../packages/database',
     '^@nexus/auth$': '<rootDir>/../../packages/auth',
     '^@nexus/types$': '<rootDir>/../../packages/types',
+    '^@nexus/trpc/(.*)$': '<rootDir>/../../packages/trpc/$1',
   },
-  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(superjson)/)',
+  ],
+  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/', 'test-utils'],
+  testMatch: [
+    '**/__tests__/**/*.test.[jt]s?(x)',
+    '**/?(*.)+(spec|test).[jt]s?(x)'
+  ],
   collectCoverageFrom: [
     'app/**/*.{js,jsx,ts,tsx}',
     '!app/**/*.d.ts',
