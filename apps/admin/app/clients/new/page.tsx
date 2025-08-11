@@ -79,9 +79,11 @@ export default function NewClientPage() {
     // Extract domain from URL
     const domain = data.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
     
-    // Prepare departments data
+    // Prepare departments data (only send name, not id)
     const departmentsData = data.departments.length > 0 
-      ? data.departments.map(dept => ({ name: dept.name }))
+      ? data.departments.map(dept => ({ 
+          name: dept.name.trim() 
+        }))
       : undefined;
     
     // Prepare users data
