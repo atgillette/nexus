@@ -133,15 +133,33 @@ model WorkflowExecution {
 }
 
 model Credential {
-  id        String   @id @default(cuid())
-  name      String
-  type      String
-  companyId String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  company   Company  @relation(fields: [companyId], references: [id])
-
+  id            String       @id @default(cuid())
+  name          String
+  service       ServiceType  @default(slack)
+  companyId     String
+  isActive      Boolean      @default(true)
+  isConnected   Boolean      @default(false)
+  
+  // OAuth fields
+  clientId      String?
+  clientSecret  String?      @db.Text
+  accessToken   String?      @db.Text
+  refreshToken  String?      @db.Text
+  tokenExpiry   DateTime?
+  
+  // Service-specific configuration
+  config        Json         @default("{}")
+  
+  // Metadata
+  lastUsedAt    DateTime?
+  lastSyncAt    DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  createdBy     String?
+  
+  company       Company      @relation(fields: [companyId], references: [id])
+  
+  @@unique([companyId, service, name])
   @@map("credentials")
 }
 
@@ -231,4 +249,12 @@ enum BillingCadence {
   monthly
   quarterly
   yearly
+}
+
+enum ServiceType {
+  slack
+  github
+  jira
+  salesforce
+  aws
 }

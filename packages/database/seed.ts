@@ -133,17 +133,24 @@ async function main() {
   // Create credentials
   await prisma.credential.create({
     data: {
-      name: "Salesforce API Key",
-      type: "api_key",
+      name: "Default",
+      service: "salesforce",
       companyId: acmeCompany.id,
+      config: {
+        instanceUrl: "https://acme.my.salesforce.com",
+        domain: "acme"
+      },
     },
   });
 
   await prisma.credential.create({
     data: {
-      name: "SendGrid SMTP",
-      type: "smtp",
+      name: "Default",
+      service: "slack",
       companyId: techStartup.id,
+      config: {
+        workspaceUrl: "techstartup.slack.com"
+      },
     },
   });
 
