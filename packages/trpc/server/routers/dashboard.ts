@@ -242,16 +242,33 @@ export const dashboardRouter = createTRPCRouter({
         });
         
         // Transform execution data
-        const logs = executions.map(execution => ({
-          id: execution.id,
-          timestamp: execution.startedAt.toISOString(),
-          workflowId: execution.workflow.id,
-          workflowName: execution.workflow.name,
-          status: execution.status,
-          details: execution.result || execution.error || `Execution ${execution.status}`,
-          duration: execution.duration,
-          itemsProcessed: execution.itemsProcessed
-        }));
+        const logs = executions.map(execution => {
+          // Convert result/error to string for display
+          let details = `Execution ${execution.status}`;
+          if (execution.error) {
+            details = execution.error;
+          } else if (execution.result) {
+            // If result is an object, stringify it or extract a message
+            if (typeof execution.result === 'object' && execution.result !== null) {
+              // Try to extract a message or description if available
+              const resultObj = execution.result as any;
+              details = resultObj.message || resultObj.description || JSON.stringify(execution.result);
+            } else {
+              details = String(execution.result);
+            }
+          }
+          
+          return {
+            id: execution.id,
+            timestamp: execution.startedAt.toISOString(),
+            workflowId: execution.workflow.id,
+            workflowName: execution.workflow.name,
+            status: execution.status,
+            details, // Now guaranteed to be a string
+            duration: execution.duration,
+            itemsProcessed: execution.itemsProcessed
+          };
+        });
         
         console.log(`Found ${executions.length} execution logs (page ${input.page} of ${totalPages})`);
         
