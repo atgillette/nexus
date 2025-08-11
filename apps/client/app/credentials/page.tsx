@@ -94,14 +94,30 @@ export default function CredentialsPage() {
   useEffect(() => {
     if (selectedCredential) {
       const config = selectedCredential.config as ServiceFormData;
+      // Only populate non-sensitive fields from existing credentials
+      // Never show masked/sensitive values in form inputs
       setFormData({
-        clientId: selectedCredential.clientId || "",
-        clientSecret: selectedCredential.clientSecret || "",
-        accessToken: selectedCredential.accessToken || "",
-        refreshToken: selectedCredential.refreshToken || "",
-        ...config,
+        // Non-sensitive fields can be shown
+        workspaceUrl: config.workspaceUrl || "",
+        organization: config.organization || "",
+        domain: config.domain || "",
+        email: config.email || "",
+        instanceUrl: config.instanceUrl || "",
+        accessKeyId: config.accessKeyId || "",
+        region: config.region || "",
+        // Sensitive fields are always empty (user must re-enter)
+        clientId: "",
+        clientSecret: "",
+        accessToken: "",
+        refreshToken: "",
+        botToken: "",
+        signingSecret: "",
+        personalAccessToken: "",
+        apiToken: "",
+        secretAccessKey: "",
       });
     } else {
+      // No existing credential - start with empty form
       setFormData({});
     }
     setIsDirty(false);
@@ -151,7 +167,7 @@ export default function CredentialsPage() {
                 <Input
                   id="botToken"
                   type={showSecrets.botToken ? "text" : "password"}
-                  placeholder={formData.botToken ? "••••••••••••" : "xoxb-..."}
+                  placeholder={selectedCredential ? "••••••••••••" : "xoxb-..."}
                   value={formData.botToken || ""}
                   onChange={(e) => handleInputChange("botToken", e.target.value)}
                   className="pr-10"
@@ -172,7 +188,7 @@ export default function CredentialsPage() {
                 <Input
                   id="signingSecret"
                   type={showSecrets.signingSecret ? "text" : "password"}
-                  placeholder={formData.signingSecret ? "••••••••" : "Enter signing secret"}
+                  placeholder={selectedCredential ? "••••••••" : "Enter signing secret"}
                   value={formData.signingSecret || ""}
                   onChange={(e) => handleInputChange("signingSecret", e.target.value)}
                   className="pr-10"
@@ -209,7 +225,7 @@ export default function CredentialsPage() {
                 <Input
                   id="personalAccessToken"
                   type={showSecrets.personalAccessToken ? "text" : "password"}
-                  placeholder={formData.personalAccessToken ? "••••••••••••" : "ghp_..."}
+                  placeholder={selectedCredential ? "••••••••••••" : "ghp_..."}
                   value={formData.personalAccessToken || ""}
                   onChange={(e) => handleInputChange("personalAccessToken", e.target.value)}
                   className="pr-10"
@@ -257,7 +273,7 @@ export default function CredentialsPage() {
                 <Input
                   id="apiToken"
                   type={showSecrets.apiToken ? "text" : "password"}
-                  placeholder={formData.apiToken ? "••••••••••••" : "Enter API token"}
+                  placeholder={selectedCredential ? "••••••••••••" : "Enter API token"}
                   value={formData.apiToken || ""}
                   onChange={(e) => handleInputChange("apiToken", e.target.value)}
                   className="pr-10"
@@ -305,7 +321,7 @@ export default function CredentialsPage() {
                 <Input
                   id="clientSecret"
                   type={showSecrets.clientSecret ? "text" : "password"}
-                  placeholder={formData.clientSecret ? "••••••••••••" : "Enter client secret"}
+                  placeholder={selectedCredential ? "••••••••••••" : "Enter client secret"}
                   value={formData.clientSecret || ""}
                   onChange={(e) => handleInputChange("clientSecret", e.target.value)}
                   className="pr-10"
@@ -326,7 +342,7 @@ export default function CredentialsPage() {
                 <Input
                   id="refreshToken"
                   type={showSecrets.refreshToken ? "text" : "password"}
-                  placeholder={formData.refreshToken ? "••••••••••••" : "Enter refresh token"}
+                  placeholder={selectedCredential ? "••••••••••••" : "Enter refresh token"}
                   value={formData.refreshToken || ""}
                   onChange={(e) => handleInputChange("refreshToken", e.target.value)}
                   className="pr-10"
@@ -363,7 +379,7 @@ export default function CredentialsPage() {
                 <Input
                   id="secretAccessKey"
                   type={showSecrets.secretAccessKey ? "text" : "password"}
-                  placeholder={formData.secretAccessKey ? "••••••••••••" : "Enter secret access key"}
+                  placeholder={selectedCredential ? "••••••••••••" : "Enter secret access key"}
                   value={formData.secretAccessKey || ""}
                   onChange={(e) => handleInputChange("secretAccessKey", e.target.value)}
                   className="pr-10"
