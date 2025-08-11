@@ -1,17 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, AppLayout } from "@nexus/ui";
+import { Card, CardContent, AppLayout, Button } from "@nexus/ui";
 import { api } from "@nexus/trpc/react";
+import { MessageSquare, CheckCircle, Circle, Clock, ArrowRight } from "lucide-react";
 
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
-}
-
+// Mock pipeline data
+const pipelineItems = [
+  { id: 1, title: "Discovery: Initial Survey", status: "completed", date: "Jan 15, 2025" },
+  { id: 2, title: "Discovery: Process deep dive", status: "completed", date: "Jan 20, 2025" },
+  { id: 3, title: "ADA Proposal Sent", status: "completed", date: "Jan 25, 2025" },
+  { id: 4, title: "ADA Proposal Review", status: "in-progress", date: null },
+  { id: 5, title: "ADA Contract Sent", status: "pending", date: null },
+  { id: 6, title: "ADA Contract Signed", status: "pending", date: null },
+  { id: 7, title: "Credentials collected", status: "pending", date: null },
+  { id: 8, title: "Factory build initiated", status: "pending", date: null },
+];
 
 export default function ClientDashboard() {
   const { data, isLoading, error } = api.dashboard.getClientDashboard.useQuery();
@@ -22,8 +26,8 @@ export default function ClientDashboard() {
       <AppLayout title="Dashboard" activeNavItem="dashboard" userRole="client">
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading dashboard...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Loading dashboard...</p>
           </div>
         </div>
       </AppLayout>
@@ -35,16 +39,16 @@ export default function ClientDashboard() {
       <AppLayout title="Dashboard" activeNavItem="dashboard" userRole="client">
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600">Error loading dashboard: {error.message}</p>
+            <p className="text-destructive">Error loading dashboard: {error.message}</p>
             {error.data?.code === 'UNAUTHORIZED' && (
               <p className="mt-2">
-                <a href="/auth/login" className="text-blue-600 hover:underline">
+                <a href="/auth/login" className="text-primary hover:underline">
                   Please log in
                 </a>
               </p>
             )}
             {error.data?.code === 'FORBIDDEN' && (
-              <p className="mt-2 text-sm text-gray-600">Client access required</p>
+              <p className="mt-2 text-sm text-muted-foreground">Client access required</p>
             )}
           </div>
         </div>
@@ -57,12 +61,19 @@ export default function ClientDashboard() {
       <AppLayout title="Dashboard" activeNavItem="dashboard" userRole="client">
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <p className="text-gray-600">No data available</p>
+            <p className="text-muted-foreground">No data available</p>
           </div>
         </div>
       </AppLayout>
     );
   }
+
+  // Mock SE data - in real app this would come from the API
+  const assignedSE = {
+    name: "John Smith",
+    role: "Solutions Engineer",
+    avatar: null
+  };
 
   return (
     <AppLayout
@@ -73,195 +84,141 @@ export default function ClientDashboard() {
       onProfileClick={() => router.push('/profile')}
       onNotificationsClick={() => console.log('Notifications clicked')}
     >
-      <div className="p-6">
-        {/* Welcome message */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Welcome back, {data.company.name}</h2>
-          <p className="text-gray-600">Here&apos;s your workflow automation overview</p>
-        </div>
-        {/* ROI Metrics */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Workflows</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data.metrics.activeWorkflows}</div>
-              <p className="text-xs text-muted-foreground">Currently running</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Cost Savings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(data.metrics.estimatedSavings)}</div>
-              <p className="text-xs text-muted-foreground">From successful executions</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data.metrics.successRate}%</div>
-              <p className="text-xs text-muted-foreground">Of total executions</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Cost</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(data.billing.currentCost)}</div>
-              <p className="text-xs text-muted-foreground">{data.billing.monthlyUsage} / {data.billing.monthlyLimit} executions</p>
-            </CardContent>
-          </Card>
+      <div className="pt-16">
+        <div className="p-6 max-w-7xl mx-auto">
+          {/* Company Header with SE Info */}
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">{data.company.name}</h1>
+          </div>
+          
+          {/* SE Info Section */}
+          {assignedSE ? (
+            <div className="flex items-center gap-4 bg-card rounded-lg p-4 shadow-sm border border-border">
+              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                {/* Avatar placeholder */}
+                <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">{assignedSE.name}</p>
+                <p className="text-sm text-muted-foreground">{assignedSE.role}</p>
+              </div>
+              <Button variant="outline" className="flex items-center gap-2" disabled>
+                <MessageSquare className="w-4 h-4" />
+                Message SE
+              </Button>
+            </div>
+          ) : (
+            <div className="bg-muted/50 rounded-lg p-4 border border-border">
+              <p className="text-sm text-muted-foreground">No SE assigned</p>
+            </div>
+          )}
         </div>
 
-        {/* Workflow Status and Performance */}
-        <div className="mt-8 grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Workflows</CardTitle>
-              <CardDescription>Your automation processes</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Daily Data Processing</p>
-                    <p className="text-xs text-muted-foreground">Last run: 2 hours ago</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Pipeline Progress */}
+          <div>
+            <h2 className="text-xl font-semibold text-foreground mb-4">Pipeline Progress</h2>
+            <div className="bg-card rounded-lg p-6 shadow-sm border border-border">
+              <div className="space-y-4 relative">
+                {pipelineItems.map((item) => (
+                  <div key={item.id} className="flex items-start gap-3">
+                    {/* Status Icon */}
+                    <div className="mt-0.5 z-10">
+                      {item.status === "completed" ? (
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                      ) : item.status === "in-progress" ? (
+                        <Clock className="w-5 h-5 text-blue-500" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-muted-foreground/50" />
+                      )}
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1">
+                      <p className={`text-sm ${
+                        item.status === "completed" ? "text-foreground" : 
+                        item.status === "in-progress" ? "text-primary font-medium" : 
+                        "text-muted-foreground"
+                      }`}>
+                        {item.title}
+                      </p>
+                      {item.date && (
+                        <p className="text-xs text-muted-foreground mt-0.5">Completed {item.date}</p>
+                      )}
+                      {item.status === "in-progress" && (
+                        <p className="text-xs text-primary mt-0.5">In Progress</p>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Active</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Customer Report Generation</p>
-                    <p className="text-xs text-muted-foreground">Last run: 5 hours ago</p>
-                  </div>
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Active</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Invoice Processing</p>
-                    <p className="text-xs text-muted-foreground">Last run: 1 day ago</p>
-                  </div>
-                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Scheduled</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Email Campaign Automation</p>
-                    <p className="text-xs text-muted-foreground">Last run: 3 days ago</p>
-                  </div>
-                  <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">Paused</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance Metrics</CardTitle>
-              <CardDescription>Last 30 days</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Success Rate</span>
-                    <span className="text-sm text-muted-foreground">92%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '92%' }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Efficiency Score</span>
-                    <span className="text-sm text-muted-foreground">85%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '85%' }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Resource Utilization</span>
-                    <span className="text-sm text-muted-foreground">78%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-purple-600 h-2 rounded-full" style={{ width: '78%' }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Error Recovery</span>
-                    <span className="text-sm text-muted-foreground">95%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-orange-600 h-2 rounded-full" style={{ width: '95%' }}></div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Executions */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Recent Executions</CardTitle>
-            <CardDescription>Latest workflow runs and their status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between border-b pb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium">Daily Data Processing</p>
-                    <p className="text-xs text-muted-foreground">Completed in 4m 23s</p>
-                  </div>
-                </div>
-                <span className="text-xs text-muted-foreground">2 hours ago</span>
-              </div>
-              <div className="flex items-center justify-between border-b pb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium">Customer Report Generation</p>
-                    <p className="text-xs text-muted-foreground">Completed in 2m 15s</p>
-                  </div>
-                </div>
-                <span className="text-xs text-muted-foreground">5 hours ago</span>
-              </div>
-              <div className="flex items-center justify-between border-b pb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="h-2 w-2 bg-red-500 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium">Invoice Processing</p>
-                    <p className="text-xs text-muted-foreground">Failed - Connection timeout</p>
-                  </div>
-                </div>
-                <span className="text-xs text-muted-foreground">1 day ago</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium">Email Campaign Automation</p>
-                    <p className="text-xs text-muted-foreground">Completed in 45s</p>
-                  </div>
-                </div>
-                <span className="text-xs text-muted-foreground">3 days ago</span>
+                ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Metrics Section */}
+          <div className="space-y-6">
+            {/* Time Saved */}
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">Time Saved</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold text-foreground">24.5 hrs</div>
+                    <p className="text-xs text-muted-foreground">Last 7 days</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold text-foreground">168.2 hrs</div>
+                    <p className="text-xs text-muted-foreground">All time</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Money Saved */}
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">Money Saved</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold text-foreground">$2,450</div>
+                    <p className="text-xs text-muted-foreground">Last 7 days</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold text-foreground">$16,820</div>
+                    <p className="text-xs text-muted-foreground">All time</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Active Workflows */}
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">Active Workflows</h3>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-3xl font-bold text-foreground">12</div>
+                      <p className="text-xs text-muted-foreground mt-1">Currently running</p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="flex items-center gap-1 text-primary hover:text-primary/80">
+                      View workflows
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
     </AppLayout>
   );
