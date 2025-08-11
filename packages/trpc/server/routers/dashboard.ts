@@ -189,6 +189,98 @@ export const dashboardRouter = createTRPCRouter({
     }
   }),
 
+  // Workflow execution logs for reporting
+  getExecutionLogs: clientProcedure
+    .input(z.object({
+      workflowId: z.string().optional(),
+      page: z.number().min(1).default(1),
+      pageSize: z.number().min(10).max(100).default(20)
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        console.log("Fetching execution logs...");
+        
+        // Build where clause
+        const where: any = {};
+        
+        // First get all workflows for this company to filter executions
+        const companyWorkflows = await ctx.db.workflow.findMany({
+          where: { companyId: ctx.companyId },
+          select: { id: true, name: true }
+        });
+        
+        const workflowIds = companyWorkflows.map(w => w.id);
+        
+        // Filter by specific workflow or all company workflows
+        if (input.workflowId) {
+          where.workflowId = input.workflowId;
+        } else {
+          where.workflowId = { in: workflowIds };
+        }
+        
+        // Get total count for pagination
+        const totalCount = await ctx.db.workflowExecution.count({ where });
+        
+        // Calculate pagination
+        const skip = (input.page - 1) * input.pageSize;
+        const totalPages = Math.ceil(totalCount / input.pageSize);
+        
+        // Get executions with pagination
+        const executions = await ctx.db.workflowExecution.findMany({
+          where,
+          include: {
+            workflow: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
+          orderBy: { startedAt: 'desc' },
+          skip,
+          take: input.pageSize
+        });
+        
+        // Transform execution data
+        const logs = executions.map(execution => ({
+          id: execution.id,
+          timestamp: execution.startedAt.toISOString(),
+          workflowId: execution.workflow.id,
+          workflowName: execution.workflow.name,
+          status: execution.status,
+          details: execution.result || execution.error || `Execution ${execution.status}`,
+          duration: execution.duration,
+          itemsProcessed: execution.itemsProcessed
+        }));
+        
+        console.log(`Found ${executions.length} execution logs (page ${input.page} of ${totalPages})`);
+        
+        return {
+          logs,
+          workflows: companyWorkflows,
+          pagination: {
+            page: input.page,
+            pageSize: input.pageSize,
+            totalPages,
+            totalCount
+          }
+        };
+        
+      } catch (error) {
+        console.error("Error fetching execution logs:", error);
+        return {
+          logs: [],
+          workflows: [],
+          pagination: {
+            page: 1,
+            pageSize: input.pageSize,
+            totalPages: 0,
+            totalCount: 0
+          }
+        };
+      }
+    }),
+
   // Workflow ROI data for client
   getWorkflowROI: clientProcedure.query(async ({ ctx }) => {
     try {
