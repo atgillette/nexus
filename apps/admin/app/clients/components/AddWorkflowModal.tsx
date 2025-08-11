@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -12,17 +12,13 @@ import {
   Button,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Textarea,
 } from "@nexus/ui";
 
 // Validation schema
 const workflowSchema = z.object({
   name: z.string().min(1, "Workflow name is required"),
-  departmentId: z.string().min(1, "Department is required"),
+  description: z.string().min(1, "Description is required"),
 });
 
 type WorkflowFormValues = z.infer<typeof workflowSchema>;
@@ -31,7 +27,6 @@ interface AddWorkflowModalProps {
   isOpen: boolean;
   onClose: () => void;
   clientId: string;
-  departments: Array<{ id: string; name: string }>;
   onSuccess: () => void;
 }
 
@@ -39,13 +34,11 @@ export function AddWorkflowModal({
   isOpen,
   onClose,
   clientId,
-  departments,
   onSuccess,
 }: AddWorkflowModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
-    control,
     register,
     handleSubmit,
     reset,
@@ -54,7 +47,7 @@ export function AddWorkflowModal({
     resolver: zodResolver(workflowSchema),
     defaultValues: {
       name: "",
-      departmentId: "",
+      description: "",
     },
   });
 
@@ -110,29 +103,18 @@ export function AddWorkflowModal({
             )}
           </div>
 
-          {/* Department */}
+          {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="departmentId">Department</Label>
-            <Controller
-              control={control}
-              name="departmentId"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className={errors.departmentId ? "border-destructive" : ""}>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.id}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              {...register("description")}
+              placeholder="Enter workflow description"
+              className={errors.description ? "border-destructive" : ""}
+              rows={3}
             />
-            {errors.departmentId && (
-              <p className="text-sm text-destructive">{errors.departmentId.message}</p>
+            {errors.description && (
+              <p className="text-sm text-destructive">{errors.description.message}</p>
             )}
           </div>
 

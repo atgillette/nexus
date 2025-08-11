@@ -309,7 +309,6 @@ export default function ClientDetailPage() {
         isOpen={isAddWorkflowOpen}
         onClose={() => setIsAddWorkflowOpen(false)}
         clientId={clientId}
-        departments={company.departments}
         onSuccess={() => {
           setIsAddWorkflowOpen(false);
           // TODO: Refetch workflows data when real endpoint is implemented
